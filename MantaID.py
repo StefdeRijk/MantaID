@@ -65,7 +65,7 @@ def go_through_database(file):
             max_index = folder_array_results.index(max_result)
             folder_array_files.append(compare_file)
             multiple_files = 0
-            while j < len(matches):
+            for j in range(0, len(matches), 3):
                 if max_result >= matches[j]:
                     matches.insert(j, max_result)
                     j += 1
@@ -77,11 +77,10 @@ def go_through_database(file):
                     folder_array_results = []
                     folder_array_files = []
                     break
-                j += 3
             j = 0
             max_result = 0
         else :
-            while j < len(matches):
+            for j in range(0, len(matches), 3):
                 if result >= matches[j]:
                     matches.insert(j, result)
                     j += 1
@@ -90,19 +89,13 @@ def go_through_database(file):
                     matches.insert(j, manta_name)
                     j += 1
                     del matches[-3:]
-                    folder_array_results = []
                     break
-                j += 3
             j = 0
     i = 0
-    while i < len(matches):
+    for i in range(0, len(matches), 3):
         matches[i] = matches[i] * 100
-        if matches[i] - int(matches[i]) >= 0.5:
-            matches[i] = int(matches[i] + 1)
-        else :
-            matches[i] = int(matches[i])
+        matches[i] = int(matches[i] + 0.5)
         matches[i] = str(matches[i])
-        i += 3
     return matches
 
 root = tk.Tk()
@@ -131,12 +124,16 @@ def select_images(file):
     #process button
     params = [0, 1, 2]
     process_button = tk.Button(root, text="Process", command=lambda:process_page(file, params, [], 1), font="Raleway", bg="#264b77", fg="white", height=3, width=16)
+    process_button["state"] = "disabled"
     process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
 
     def select_species():
         global species
         species = species_listbox.get(ANCHOR)
         species_select_button["state"] = DISABLED
+        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
+            process_button["state"] = NORMAL
 
     #species listbox
     species_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
@@ -151,6 +148,8 @@ def select_images(file):
         global colour
         colour = colour_listbox.get(ANCHOR)
         colour_select_button["state"] = DISABLED
+        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
+            process_button["state"] = NORMAL
 
     #colour listbox
     colour_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
@@ -165,6 +164,8 @@ def select_images(file):
         global gender
         gender = gender_listbox.get(ANCHOR)
         gender_select_button["state"] = DISABLED
+        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
+            process_button["state"] = NORMAL
 
     #gender listbox
     gender_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
@@ -200,11 +201,36 @@ def select_images(file):
         colour_listbox.destroy()
         reference_small_label.destroy()
 
-        print(species, colour, gender)
-
         #save button
         save_button = tk.Button(root, text="Save image", command=lambda:save_button_function(), font="Raleway", bg="#3c5b74", fg="white", height=3, width=16)
-        save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+        save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+
+        #remove button
+        remove_button = tk.Button(root, text="Remove suggestion", command=lambda:remove_button_function(matches, params), font="Raleway", bg="#3c5b74", fg="white", height=3, width=16)
+        remove_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
+
+        def remove_button_function(matches, params):
+            global amount_of_mantas
+            retry_button.destroy()
+            result_label.destroy()
+            next_button.destroy()
+            previous_button.destroy()
+            reference_label.destroy()
+            compare_label.destroy()
+            save_button.destroy()
+            remove_button.destroy()
+            matches.pop(params[2])
+            matches.pop(params[1])
+            matches.pop(params[0])
+            if params[0] == (amount_of_mantas - 1) * 3:
+                params[0] -= 3
+                params[1] -= 3
+                params[2] -= 3
+            amount_of_mantas -= 1
+            if amount_of_mantas == 0:
+                retry_button_function()
+            else:
+                process_page(file, params, matches, 0)
 
         #retry button
         retry_button = tk.Button(root, text="Use different image", command=lambda:retry_button_function(), font="Raleway", bg="#264b77", fg="white", height=3, width=16)
@@ -251,6 +277,7 @@ def select_images(file):
             reference_label.destroy()
             compare_label.destroy()
             save_button.destroy()
+            remove_button.destroy()
             params[0] += 3
             params[1] += 3
             params[2] += 3
@@ -264,11 +291,13 @@ def select_images(file):
             reference_label.destroy()
             compare_label.destroy()
             save_button.destroy()
+            remove_button.destroy()
             params[0] -= 3
             params[1] -= 3
             params[2] -= 3
             process_page(file, params, matches, 0)
 
+        #compare image
         compare_image = Image.open(matches[params[1]])
         compare_image = ImageTk.PhotoImage(compare_image)
         height = compare_image.height()
@@ -290,6 +319,8 @@ def select_images(file):
         result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
 
         def retry_button_function():
+            global amount_of_mantas
+            amount_of_mantas = 3
             retry_button.destroy()
             result_label.destroy()
             next_button.destroy()
@@ -297,6 +328,7 @@ def select_images(file):
             reference_label.destroy()
             compare_label.destroy()
             save_button.destroy()
+            remove_button.destroy()
             home()
 
     def cancel_button_function():
