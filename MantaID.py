@@ -1,12 +1,14 @@
 import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
-from tkinter.filedialog import askopenfile, askopenfiles, askopenfilenames
+from tkinter import filedialog
 from skimage.metrics import structural_similarity
 import cv2
 import glob
+import shutil
 
 amount_of_mantas = 3
+database_folder = "Database"
 
 def image_compare(file, compare_file):
     #Works well with images of different dimensions
@@ -39,318 +41,333 @@ def image_compare(file, compare_file):
     return ((ssim * 2) + orb_similarity) / 3
 
 def go_through_database(file):
-    i = 0
-    j = 0
     #index 0 = percentage similar, index 1 = path to file, index 2 = name of manta
-    matches = [0, "", ""] * amount_of_mantas
-    folder_array_results = []
-    folder_array_files = []
-    multiple_files = 0
-    files = glob.glob("Database/*/*.jpg")
+    matches = []
+    for i in range(amount_of_mantas):
+        temp = [0, "", ""]
+        matches.append(temp)
+    current_folder_results = []
+    current_folder_files = []
+    files = glob.glob(database_folder + "/*/*.jpg")
     for i in range(len(files)):
-        compare_file = files[i]
-        result = image_compare(file, compare_file)
-        manta_name = compare_file.split("\\")[1]
+        current_file = files[i]
+        current_result = image_compare(file, current_file)
+        current_manta_name = current_file.split("\\")[-2]
         if i < len(files) - 1:
-            next_name = files[i + 1].split("\\")[1]
+            next_manta_name = files[i + 1].split("\\")[-2]
         else :
-            next_name = None
-        if manta_name == next_name:
-            folder_array_results.append(result)
-            folder_array_files.append(compare_file)
-            multiple_files += 1
-        elif manta_name != next_name and multiple_files != 0:
-            folder_array_results.append(result)
-            max_result = max(folder_array_results)
-            max_index = folder_array_results.index(max_result)
-            folder_array_files.append(compare_file)
-            multiple_files = 0
-            for j in range(0, len(matches), 3):
-                if max_result >= matches[j]:
-                    matches.insert(j, max_result)
-                    j += 1
-                    matches.insert(j, folder_array_files[max_index])
-                    j += 1
-                    matches.insert(j, manta_name)
-                    j += 1
-                    del matches[-3:]
-                    folder_array_results = []
-                    folder_array_files = []
-                    break
-            j = 0
-            max_result = 0
+            next_manta_name = None
+        if current_manta_name == next_manta_name:
+            current_folder_results.append(current_result)
+            current_folder_files.append(current_file)
         else :
-            for j in range(0, len(matches), 3):
-                if result >= matches[j]:
-                    matches.insert(j, result)
-                    j += 1
-                    matches.insert(j, files[i])
-                    j += 1
-                    matches.insert(j, manta_name)
-                    j += 1
-                    del matches[-3:]
-                    break
-            j = 0
-    i = 0
-    for i in range(0, len(matches), 3):
-        matches[i] = matches[i] * 100
-        matches[i] = int(matches[i] + 0.5)
-        matches[i] = str(matches[i])
+            current_folder_results.append(current_result)
+            current_folder_files.append(current_file)
+            max_result = max(current_folder_results)
+            max_result_index = current_folder_results.index(max_result)
+            for j in range(len(matches)):
+                if max_result >= matches[j][0]:
+                    temp = []
+                    temp.append(max_result)
+                    temp.append(current_folder_files[max_result_index])
+                    temp.append(current_manta_name)
+                    matches.insert(j, temp)
+                    del matches[-1:]      
+                    current_folder_results = []
+                    current_folder_files = []
+                    max_result = 0
+                    break        
+    for i in range(0, len(matches)):
+        matches[i][0] = matches[i][0] * 100
+        matches[i][0] = int(matches[i][0] + 0.5)
+        matches[i][0] = str(matches[i][0])
     return matches
 
 root = tk.Tk()
 root.title("MantaID")
 root.iconbitmap("icon.ico")
-root.geometry("+%d+%d"%(0,0))
+root.state("zoomed")
 
 canvas = tk.Canvas(root, width=1920, height=1080)
-canvas.grid(columnspan=5, rowspan=5)
+
+def show_background():
+    background_label = tk.Label(root, image=background_image)
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+    #quit_button
+    quit_button = tk.Button(root, text="Quit", command=root.quit, font=("Raleway", 16), bg="#00243f", fg="white", height=4, width=16)
+    quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
 
 #background image
 background_image = Image.open("background.jpg")
-background_image=ImageTk.PhotoImage(background_image)
-background_label = tk.Label(root, image=background_image)
-background_label.place(x=0, y=0, relwidth=1, relheight=1)
+background_image = ImageTk.PhotoImage(background_image)
 
-#quit_button
-quit_button = tk.Button(root, text="Quit", command=root.quit, font="Raleway", bg="#00243f", fg="white", height=4, width=16)
-quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
+def settings_button_function(master, page, file):
+    SettingsPage = settings_page(master, page, file)
+    show_page(SettingsPage.frame)
 
-def select_images(file):
-    #cancel button
-    cancel_button = tk.Button(root, text="Cancel", command=lambda:cancel_button_function(), font="Raleway", bg="#3c5b74", fg="white", height=3, width=16)
-    cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+def show_page(page):
+    page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-    #process button
-    params = [0, 1, 2]
-    process_button = tk.Button(root, text="Process", command=lambda:process_page(file, params, [], 1), font="Raleway", bg="#264b77", fg="white", height=3, width=16)
-    process_button["state"] = "disabled"
-    process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+class settings_page:
+    def __init__(self, master, previous_page, file):
+        global database_folder
+        self.frame = Frame()
+        show_background()
 
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-    def select_species():
-        global species
-        species = species_listbox.get(ANCHOR)
-        species_select_button["state"] = DISABLED
-        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
-            process_button["state"] = NORMAL
+        def back_button_function(previous_page, master, file):
+            PreviousPage = previous_page(master, file)
+            show_page(PreviousPage.frame)
 
-    #species listbox
-    species_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
-    species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.2)
-    species_listbox.insert(0, "Reef manta")
-    species_listbox.insert(1, "Oceanic manta")
-    species_listbox.insert(2, "Unknown")
-    species_select_button = tk.Button(root, text="Select", command=lambda:select_species(), font="Raleway", bg="#006699", fg="white", height=3, width=16)
-    species_select_button.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.05)
+        set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        set_matches_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
+        set_matches_label = tk.Label(master, text="Current amount of matches: " + database_folder, font=("Raleway", 16), bg="#3c5b74", fg="white")
+        set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.6, relheight=0.125)
 
-    def select_colour():
-        global colour
-        colour = colour_listbox.get(ANCHOR)
-        colour_select_button["state"] = DISABLED
-        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
-            process_button["state"] = NORMAL
-
-    #colour listbox
-    colour_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
-    colour_listbox.place(relx=0.175, rely=0.4, relwidth=0.3, relheight=0.2)
-    colour_listbox.insert(0, "Black")
-    colour_listbox.insert(1, "White")
-    colour_listbox.insert(2, "Unknown")
-    colour_select_button = tk.Button(root, text="Select", command=lambda:select_colour(), font="Raleway", bg="#006699", fg="white", height=3, width=16)
-    colour_select_button.place(relx=0.175, rely=0.65, relwidth=0.3, relheight=0.05)
-
-    def select_gender():
-        global gender
-        gender = gender_listbox.get(ANCHOR)
-        gender_select_button["state"] = DISABLED
-        if species_select_button["state"] == DISABLED and colour_select_button["state"] == DISABLED and gender_select_button["state"] == DISABLED:
-            process_button["state"] = NORMAL
-
-    #gender listbox
-    gender_listbox = tk.Listbox(root, bg="#264b77", font="Raleway", fg="white", width=10)
-    gender_listbox.place(relx=0.525, rely=0.4, relwidth=0.3, relheight=0.2)
-    gender_listbox.insert(0, "Male")
-    gender_listbox.insert(1, "Female")
-    gender_listbox.insert(2, "Unknown")
-    gender_select_button = tk.Button(root, text="Select", command=lambda:select_gender(), font="Raleway", bg="#006699", fg="white", height=3, width=16)
-    gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
-
-    #reference image
-    reference_image = Image.open(file)
-    reference_image=ImageTk.PhotoImage(reference_image)
-    height = reference_image.height()
-    width = reference_image.width()
-    aspect_ratio = width / height
-    new_width = int(324 * aspect_ratio)
-    new_reference_image = Image.open(file)
-    resized_reference_image = new_reference_image.resize((new_width,324), Image.ANTIALIAS)
-    resized_reference_image=ImageTk.PhotoImage(resized_reference_image)
-    reference_small_label = tk.Label(root, image=resized_reference_image, bg="#264b77")
-    reference_small_label.image = resized_reference_image
-    reference_small_label.place(relx=0.175, rely=0.05, relwidth=0.3, relheight=0.3)
-
-    def process_page(file, params, matches, get_data):
-        cancel_button.destroy()
-        process_button.destroy()
-        gender_select_button.destroy()
-        gender_listbox.destroy()
-        species_select_button.destroy()
-        species_listbox.destroy()
-        colour_select_button.destroy()
-        colour_listbox.destroy()
-        reference_small_label.destroy()
-
-        #save button
-        save_button = tk.Button(root, text="Save image", command=lambda:save_button_function(), font="Raleway", bg="#3c5b74", fg="white", height=3, width=16)
-        save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
-
-        #remove button
-        remove_button = tk.Button(root, text="Remove suggestion", command=lambda:remove_button_function(matches, params), font="Raleway", bg="#3c5b74", fg="white", height=3, width=16)
-        remove_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
-
-        def remove_button_function(matches, params):
+        def set_matches_button_function():
             global amount_of_mantas
-            retry_button.destroy()
-            result_label.destroy()
-            next_button.destroy()
-            previous_button.destroy()
-            reference_label.destroy()
-            compare_label.destroy()
-            save_button.destroy()
-            remove_button.destroy()
-            matches.pop(params[2])
-            matches.pop(params[1])
-            matches.pop(params[0])
-            if params[0] == (amount_of_mantas - 1) * 3:
-                params[0] -= 3
-                params[1] -= 3
-                params[2] -= 3
-            amount_of_mantas -= 1
-            if amount_of_mantas == 0:
-                retry_button_function()
-            else:
-                process_page(file, params, matches, 0)
+            amount_of_mantas = 2
 
-        #retry button
-        retry_button = tk.Button(root, text="Use different image", command=lambda:retry_button_function(), font="Raleway", bg="#264b77", fg="white", height=3, width=16)
-        retry_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        set_database_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
+        set_database_label = tk.Label(master, text="Current database folder: " + database_folder, font=("Raleway", 16), bg="#3c5b74", fg="white")
+        set_database_label.place(relx=0.125, rely=0.25, relwidth=0.6, relheight=0.125)
 
-        #previous button
-        previous_button = tk.Button(root, text="Previous", command=lambda:previous_button_function(file, params, matches), font="Raleway", bg="#686873", fg="white", height=3, width=16)
-        previous_button.place(relx=0.25, rely=0.725, relwidth=0.125, relheight=0.05)
-        if params[0] == 0:
-            previous_button["state"] = DISABLED
-        else :
-            previous_button["state"] = NORMAL
+class home_page:
+    def __init__(self, master, file):
+        self.frame = Frame()
+        show_background()
 
-        #next button
-        next_button = tk.Button(root, text="Next", command=lambda:next_button_function(file, params, matches), font="Raleway", bg="#686873", fg="white", height=3, width=16)
-        next_button.place(relx=0.625, rely=0.725, relwidth=0.125, relheight=0.05)
-        if params[0] == (amount_of_mantas - 1) * 3:
-            next_button["state"] = DISABLED
-        else :
-            next_button["state"] = NORMAL
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, home_page, None), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #open images
+        self.open_button_text = tk.StringVar()
+        self.open_button = tk.Button(master, textvariable=self.open_button_text, command=lambda:open_files(file), font=("Raleway", 16), bg="#264b77", fg="white", height=4, width=16)
+        self.open_button_text.set("Open image")
+        self.open_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def open_files(file):
+            self.open_button_text.set("Loading...")
+            files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.png; *.jpg")])
+            if files:
+                file = files.name
+                SelectionPage = selection_page(master, file)
+                show_page(SelectionPage.frame)
+            else :
+                home_page(root)
+
+class selection_page:
+    def __init__(self, master, file):
+        self.frame = Frame()
+        self.attributes_number = 0
+        self.attributes = [None] * 3 # species - colour - gender
+        show_background()
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, selection_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #cancel button
+        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function():
+            HomePage = home_page(master, file)
+            show_page(HomePage.frame)
+
+        #process button
+        self.process_button = tk.Button(master, text="Process", command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.process_button["state"] = "disabled"
+        self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def process_button_function():
+            ProcessPage = process_page(master, file)
+            show_page(ProcessPage.frame)
 
         #reference image
-        reference_image = Image.open(file)
-        reference_image=ImageTk.PhotoImage(reference_image)
-        height = reference_image.height()
-        width = reference_image.width()
-        aspect_ratio = width / height
-        new_width = int(729 * aspect_ratio)
-        new_reference_image = Image.open(file)
-        resized_reference_image = new_reference_image.resize((new_width,729), Image.ANTIALIAS)
-        resized_reference_image=ImageTk.PhotoImage(resized_reference_image)
-        reference_label = tk.Label(root, image=resized_reference_image, bg="#006699")
-        reference_label.image = resized_reference_image
-        reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
+        self.reference_image = Image.open(file)
+        self.reference_image=ImageTk.PhotoImage(self.reference_image)
+        self.height = self.reference_image.height()
+        self.width = self.reference_image.width()
+        self.aspect_ratio = self.width / self.height
+        self.new_width = int(324 * self.aspect_ratio)
+        self.new_reference_image = Image.open(file)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,324), Image.ANTIALIAS)
+        self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
+        self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
+        self.reference_small_label.image = self.resized_reference_image
+        self.reference_small_label.place(relx=0.175, rely=0.05, relwidth=0.3, relheight=0.3)
 
-        if get_data == 1:
-            matches = go_through_database(file)
+        def select_attributes(index, listbox, button):
+            self.attributes[index] = listbox.get(ANCHOR)
+            button["state"] = DISABLED
+            self.attributes_number += 1
+            if self.attributes_number == 3:
+                self.process_button["state"] = NORMAL
 
-        def next_button_function(file, params, matches):
-            retry_button.destroy()
-            result_label.destroy()
-            next_button.destroy()
-            previous_button.destroy()
-            reference_label.destroy()
-            compare_label.destroy()
-            save_button.destroy()
-            remove_button.destroy()
-            params[0] += 3
-            params[1] += 3
-            params[2] += 3
-            process_page(file, params, matches, 0)
+        #species listbox
+        self.species_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.2)
+        self.species_listbox.insert(0, "Reef manta")
+        self.species_listbox.insert(1, "Oceanic manta")
+        self.species_listbox.insert(2, "Unknown")
+        self.species_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(0, self.species_listbox, self.species_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
+        self.species_select_button.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.05)
 
-        def previous_button_function(file, params, matches):
-            retry_button.destroy()
-            result_label.destroy()
-            next_button.destroy()
-            previous_button.destroy()
-            reference_label.destroy()
-            compare_label.destroy()
-            save_button.destroy()
-            remove_button.destroy()
-            params[0] -= 3
-            params[1] -= 3
-            params[2] -= 3
-            process_page(file, params, matches, 0)
+        #colour listbox
+        self.colour_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.colour_listbox.place(relx=0.175, rely=0.4, relwidth=0.3, relheight=0.2)
+        self.colour_listbox.insert(0, "Black")
+        self.colour_listbox.insert(1, "White")
+        self.colour_listbox.insert(2, "Unknown")
+        self.colour_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(1, self.colour_listbox, self.colour_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
+        self.colour_select_button.place(relx=0.175, rely=0.65, relwidth=0.3, relheight=0.05)
 
+        #gender listbox
+        self.gender_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.gender_listbox.place(relx=0.525, rely=0.4, relwidth=0.3, relheight=0.2)
+        self.gender_listbox.insert(0, "Male")
+        self.gender_listbox.insert(1, "Female")
+        self.gender_listbox.insert(2, "Unknown")
+        self.gender_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(2, self.gender_listbox, self.gender_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
+        self.gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
+
+class process_page:
+    def __init__(self, master, file):
+        global amount_of_mantas
+        self.frame = Frame()
+        self.matches = go_through_database(file)
+        self.match_index = 0
+        self.number_of_mantas = amount_of_mantas
+        show_background()
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        def show_matches():
+            ShowMatchImage = show_match_image(master, self.matches, self.match_index)
+            ShowMatchLabel = show_match_label(master, self.matches, self.match_index)
+            ShowMatchImage.frame.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
+            ShowMatchLabel.frame.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
+
+        show_matches()
+
+        #retry button
+        self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function():
+            HomePage = home_page(master, file)
+            show_page(HomePage.frame)
+        
+        #previous button
+        self.previous_button = tk.Button(master, text="Previous", command=lambda:previous_button_function(), font=("Raleway", 16), bg="#686873", fg="white", height=3, width=16)
+        self.previous_button.place(relx=0.25, rely=0.725, relwidth=0.125, relheight=0.05)
+
+        def previous_button_function():
+            self.match_index -= 1
+            set_button_state()
+            show_matches()
+
+        #next button
+        self.next_button = tk.Button(master, text="Next", command=lambda:next_button_function(), font=("Raleway", 16), bg="#686873", fg="white", height=3, width=16)
+        self.next_button.place(relx=0.625, rely=0.725, relwidth=0.125, relheight=0.05)
+        
+        def next_button_function():
+            self.match_index += 1
+            set_button_state()
+            show_matches()
+
+        def set_button_state():
+            if self.match_index == (self.number_of_mantas - 1):
+                self.next_button["state"] = DISABLED
+            else :
+                self.next_button["state"] = NORMAL
+            if self.match_index == 0:
+                self.previous_button["state"] = DISABLED
+            else :
+                self.previous_button["state"] = NORMAL
+
+        set_button_state()
+
+        #save button
+        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, self.matches[self.match_index][1]), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+
+        def save_button_function(src, dst):
+            dst_cpy = dst.rsplit("\\", 1)[0] + "\\"
+            manta_name = dst.split("\\")[-2]
+            dst = dst_cpy + manta_name + "10.jpg"
+            shutil.copy2(src, dst)
+            cancel_button_function()
+
+        #new_button
+        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #remove button
+        self.remove_button = tk.Button(master, text="Remove suggestion", command=lambda:remove_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.remove_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
+
+        def remove_button_function():
+            self.matches.pop(self.match_index)
+            if self.match_index == (self.number_of_mantas - 1):
+                    self.match_index -= 1
+            self.number_of_mantas -= 1
+            if self.number_of_mantas == 0:
+                cancel_button_function()
+            else :
+                set_button_state()
+                show_matches()
+
+        #reference image
+        self.reference_image = Image.open(file)
+        self.reference_image=ImageTk.PhotoImage(self.reference_image)
+        self.height = self.reference_image.height()
+        self.width = self.reference_image.width()
+        self.aspect_ratio = self.width / self.height
+        self.new_width = int(729 * self.aspect_ratio)
+        self.new_reference_image = Image.open(file)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,729), Image.ANTIALIAS)
+        self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
+        self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
+        self.reference_label.image = self.resized_reference_image
+        self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
+
+class show_match_image:
+    def __init__(self, master, matches, i):
+        self.frame = Frame()
         #compare image
-        compare_image = Image.open(matches[params[1]])
-        compare_image = ImageTk.PhotoImage(compare_image)
-        height = compare_image.height()
-        width = compare_image.width()
-        aspect_ratio = width / height
-        new_width = int(729 * aspect_ratio)
-        new_compare_image = Image.open(matches[params[1]])
-        resized_compare_image = new_compare_image.resize((new_width,729), Image.ANTIALIAS)
-        resized_compare_image=ImageTk.PhotoImage(resized_compare_image)
-        compare_label = tk.Label(root, image=resized_compare_image, bg="#006699")
-        compare_label.image = resized_compare_image
-        compare_label.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
+        self.compare_image = Image.open(matches[i][1])
+        self.compare_image = ImageTk.PhotoImage(self.compare_image)
+        self.height = self.compare_image.height()
+        self.width = self.compare_image.width()
+        self.aspect_ratio = self.width / self.height
+        self.new_width = int(729 * self.aspect_ratio)
+        self.new_compare_image = Image.open(matches[i][1])
+        self.resized_compare_image = self.new_compare_image.resize((self.new_width,729), Image.ANTIALIAS)
+        self.resized_compare_image=ImageTk.PhotoImage(self.resized_compare_image)
+        self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
+        self.compare_label.image = self.resized_compare_image
+        self.compare_label.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
 
+class show_match_label:
+    def __init__(self, master, matches, i):
+        self.frame = Frame()
         #result label
-        match_name = matches[params[2]]
-        match_percentage = matches[params[0]]
-        result_label_text = match_name + ": " + match_percentage + '%'
-        result_label = tk.Label(root, text=result_label_text, font="Raleway", bg="#b67929", fg="white", height=3, width=16)
-        result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
+        self.match_name = matches[i][2]
+        self.match_percentage = matches[i][0]
+        self.result_label_text = self.match_name + ": " + self.match_percentage + '%'
+        self.result_label = tk.Label(master, text=self.result_label_text, font=("Raleway", 16), bg="#b67929", fg="white", height=3, width=16)
+        self.result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
 
-        def retry_button_function():
-            global amount_of_mantas
-            amount_of_mantas = 3
-            retry_button.destroy()
-            result_label.destroy()
-            next_button.destroy()
-            previous_button.destroy()
-            reference_label.destroy()
-            compare_label.destroy()
-            save_button.destroy()
-            remove_button.destroy()
-            home()
 
-    def cancel_button_function():
-        cancel_button.destroy()
-        home()
 
-def home():
-    #open images
-    open_button_text = tk.StringVar()
-    open_button = tk.Button(root, textvariable=open_button_text, command=lambda:open_files(), font="Raleway", bg="#264b77", fg="white", height=4, width=16)
-    open_button_text.set("Open image")
-    open_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
-
-    def open_files():
-        open_button_text.set("Loading...")
-        files = askopenfile(parent=root, mode="rb", title="Choose files", filetypes=[("Images", "*.png; *.jpg")])
-        if files:
-            file = files.name
-            open_button.destroy()
-            select_images(file)
-        else :
-            home()
-
-home()
+HomePage = home_page(root, None)
 root.mainloop()
