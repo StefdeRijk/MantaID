@@ -258,11 +258,11 @@ class process_page:
             cancel_button_function()
 
         #new_button
-        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, ""), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        def new_button_function(master, file):
-            NewMantaPage = new_manta_page(master, file)
+        def new_button_function(master, file, manta_name):
+            NewMantaPage = new_manta_page(master, file, manta_name)
             self.frame.place_forget()
             show_page(NewMantaPage.frame)
 
@@ -296,20 +296,38 @@ class process_page:
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
 
 class new_manta_page:
-    def __init__(self, master, file):
+    def __init__(self, master, file, manta_name):
         self.frame = Frame()
+        self.manta_name = manta_name
         show_background()
 
         #settings_button
         settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def back_button_function(master, file):
+        def cancel_button_function(master, file):
             PreviousPage = process_page(master, file)
             show_page(PreviousPage.frame)
+        
+        add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        
+        set_manta_name_button = tk.Button(master, text="Set manta name", command=lambda:set_manta_name_button_function(master, file), font=("Raleway", 16), bg="#264b77", fg="white")
+        set_manta_name_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
+        set_manta_name_label = tk.Label(master, text="Name: " + str(self.manta_name), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        set_manta_name_label.place(relx=0.125, rely=0.1, relwidth=0.4, relheight=0.125)
+        set_manta_name_instruction_label = tk.Label(master, text="Insert new manta name below", font=("Raleway", 16), bg="#006699", fg="white")
+        set_manta_name_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
+        set_manta_name_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
+        set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
+
+        def set_manta_name_button_function(master, file):
+            self.manta_name = set_manta_name_entry_box.get()
+            NewMantaPage = new_manta_page(master, file, self.manta_name)
+            show_page(NewMantaPage.frame)
 
 class show_match_image:
     def __init__(self, master, matches, i):
