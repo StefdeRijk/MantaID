@@ -2,93 +2,22 @@ import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
-from skimage.metrics import structural_similarity
-import cv2
-import glob
+from IterateDatabase import go_through_database
 import shutil
 
 amount_of_mantas = 3
 database_folder = "Database"
 
-def image_compare(file, compare_file):
-    #Works well with images of different dimensions
-    def orb_sim(img00, img01):
-        orb = cv2.ORB_create()
-        kp_a, desc_a = orb.detectAndCompute(img00, None)
-        kp_b, desc_b = orb.detectAndCompute(img01, None)
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = bf.match(desc_a, desc_b)
-        similar_regions = [i for i in matches if i.distance < 50]  
-        if len(matches) == 0:
-            return 0
-        return len(similar_regions) / len(matches)
-
-    #Needs images to be same dimensions
-    def structural_sim(img00, img01):
-        sim, diff = structural_similarity(img00, img01, full=True)
-        return sim
-
-    img00 = cv2.imread(compare_file, 0)
-    img01 = cv2.imread(file, 0)
-
-    orb_similarity = orb_sim(img00, img01)
-
-    from skimage.transform import resize
-    img5 = resize(img01, (img00.shape[0], img00.shape[1]), anti_aliasing=True, preserve_range=True)
-
-    ssim = structural_sim(img00, img5)
-
-    return ((ssim * 2) + orb_similarity) / 3
-
-def go_through_database(file):
-    #index 0 = percentage similar, index 1 = path to file, index 2 = name of manta
-    matches = []
-    for i in range(amount_of_mantas):
-        temp = [0, "", ""]
-        matches.append(temp)
-    current_folder_results = []
-    current_folder_files = []
-    files = glob.glob(database_folder + "/*/*.jpg")
-    for i in range(len(files)):
-        current_file = files[i]
-        current_result = image_compare(file, current_file)
-        current_manta_name = current_file.split("\\")[-2]
-        if i < len(files) - 1:
-            next_manta_name = files[i + 1].split("\\")[-2]
-        else :
-            next_manta_name = None
-        if current_manta_name == next_manta_name:
-            current_folder_results.append(current_result)
-            current_folder_files.append(current_file)
-        else :
-            current_folder_results.append(current_result)
-            current_folder_files.append(current_file)
-            max_result = max(current_folder_results)
-            max_result_index = current_folder_results.index(max_result)
-            for j in range(len(matches)):
-                if max_result >= matches[j][0]:
-                    temp = []
-                    temp.append(max_result)
-                    temp.append(current_folder_files[max_result_index])
-                    temp.append(current_manta_name)
-                    matches.insert(j, temp)
-                    del matches[-1:]      
-                    current_folder_results = []
-                    current_folder_files = []
-                    max_result = 0
-                    break        
-    for i in range(0, len(matches)):
-        matches[i][0] = matches[i][0] * 100
-        matches[i][0] = int(matches[i][0] + 0.5)
-        matches[i][0] = str(matches[i][0])
-    return matches
 
 root = tk.Tk()
 root.title("MantaID")
 root.iconbitmap("icon.ico")
 root.state("zoomed")
 
-canvas = tk.Canvas(root, width=1920, height=1080)
+#background image
+background_image = Image.open("background.jpg")
+background_image = ImageTk.PhotoImage(background_image)
+
 
 def show_background():
     background_label = tk.Label(root, image=background_image)
@@ -98,16 +27,13 @@ def show_background():
     quit_button = tk.Button(root, text="Quit", command=root.quit, font=("Raleway", 16), bg="#00243f", fg="white", height=4, width=16)
     quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
 
-#background image
-background_image = Image.open("background.jpg")
-background_image = ImageTk.PhotoImage(background_image)
-
 def settings_button_function(master, page, file):
     SettingsPage = settings_page(master, page, file)
     show_page(SettingsPage.frame)
 
 def show_page(page):
     page.place(relx=0, rely=0, relwidth=1, relheight=1)
+
 
 class settings_page:
     def __init__(self, master, previous_page, file):
@@ -124,7 +50,7 @@ class settings_page:
 
         set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         set_matches_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
-        set_matches_label = tk.Label(master, text="Current amount of matches: " + database_folder, font=("Raleway", 16), bg="#3c5b74", fg="white")
+        set_matches_label = tk.Label(master, text="Current amount of matches: " + str(amount_of_mantas), font=("Raleway", 16), bg="#3c5b74", fg="white")
         set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.6, relheight=0.125)
 
         def set_matches_button_function():
@@ -241,7 +167,7 @@ class process_page:
     def __init__(self, master, file):
         global amount_of_mantas
         self.frame = Frame()
-        self.matches = go_through_database(file)
+        self.matches = go_through_database(file, amount_of_mantas, database_folder)
         self.match_index = 0
         self.number_of_mantas = amount_of_mantas
         show_background()
@@ -366,8 +292,6 @@ class show_match_label:
         self.result_label_text = self.match_name + ": " + self.match_percentage + '%'
         self.result_label = tk.Label(master, text=self.result_label_text, font=("Raleway", 16), bg="#b67929", fg="white", height=3, width=16)
         self.result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
-
-
 
 HomePage = home_page(root, None)
 root.mainloop()
