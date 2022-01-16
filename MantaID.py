@@ -39,6 +39,7 @@ class settings_page:
     def __init__(self, master, previous_page, file):
         global database_folder
         self.frame = Frame()
+        self.new_database_folder = None
         show_background()
 
         back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
@@ -51,16 +52,36 @@ class settings_page:
         set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         set_matches_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
         set_matches_label = tk.Label(master, text="Current amount of matches: " + str(amount_of_mantas), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.6, relheight=0.125)
+        set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.4, relheight=0.125)
+        set_matches_instruction_label = tk.Label(master, text="Insert amount of matches below", font=("Raleway", 16), bg="#006699", fg="white")
+        set_matches_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
+        set_matches_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
+        set_matches_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
 
         def set_matches_button_function():
             global amount_of_mantas
-            amount_of_mantas = 2
+            amount_of_mantas = int(set_matches_entry_box.get())
+            settings_button_function(master, previous_page, file)
 
         set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         set_database_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
         set_database_label = tk.Label(master, text="Current database folder: " + database_folder, font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_database_label.place(relx=0.125, rely=0.25, relwidth=0.6, relheight=0.125)
+        set_database_label.place(relx=0.125, rely=0.25, relwidth=0.4, relheight=0.125)
+        self.browse_button_text = tk.StringVar()
+        browse_button = tk.Button(master, textvariable=self.browse_button_text, command=lambda:browse_button_function(), font=("Raleway", 16), bg="#006699", fg="white")
+        self.browse_button_text.set("Browse")
+        browse_button.place(relx=0.55, rely=0.25, relwidth=0.175, relheight=0.125)
+
+        def browse_button_function():
+            self.browse_button_text.set("Loading...")
+            self.new_database_folder = filedialog.askdirectory(parent=master, title="Choose database folder")
+            self.browse_button_text.set("New folder is: " + self.new_database_folder.split("/")[-1])
+
+        def set_database_button_function():
+            global database_folder
+            if self.new_database_folder:
+                database_folder = self.new_database_folder
+            settings_button_function(master, previous_page, file)
 
 class home_page:
     def __init__(self, master, file):
@@ -107,11 +128,14 @@ class selection_page:
             show_page(HomePage.frame)
 
         #process button
-        self.process_button = tk.Button(master, text="Process", command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.process_button_text = tk.StringVar()
+        self.process_button = tk.Button(master, textvariable=self.process_button_text, command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.process_button_text.set("Process")
         self.process_button["state"] = "disabled"
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function():
+            self.process_button_text.set("Loading...")
             ProcessPage = process_page(master, file)
             show_page(ProcessPage.frame)
 
@@ -234,8 +258,13 @@ class process_page:
             cancel_button_function()
 
         #new_button
-        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        def new_button_function(master, file):
+            NewMantaPage = new_manta_page(master, file)
+            self.frame.place_forget()
+            show_page(NewMantaPage.frame)
 
         #remove button
         self.remove_button = tk.Button(master, text="Remove suggestion", command=lambda:remove_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
@@ -265,6 +294,22 @@ class process_page:
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
+
+class new_manta_page:
+    def __init__(self, master, file):
+        self.frame = Frame()
+        show_background()
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def back_button_function(master, file):
+            PreviousPage = process_page(master, file)
+            show_page(PreviousPage.frame)
 
 class show_match_image:
     def __init__(self, master, matches, i):
