@@ -1,6 +1,13 @@
 from ImageCompare import image_compare
 import glob
 
+def configure_percentages(matches):
+	for i in range(0, len(matches)):
+		matches[i][0] = matches[i][0] * 100
+		matches[i][0] = int(matches[i][0] + 0.5)
+		matches[i][0] = str(matches[i][0])
+	return matches
+
 def go_through_database(file, amount_of_mantas, database_folder):
     #index 0 = percentage similar, index 1 = path to file, index 2 = name of manta
     matches = []
@@ -38,8 +45,5 @@ def go_through_database(file, amount_of_mantas, database_folder):
                     current_folder_files = []
                     max_result = 0
                     break        
-    for i in range(0, len(matches)):
-        matches[i][0] = matches[i][0] * 100
-        matches[i][0] = int(matches[i][0] + 0.5)
-        matches[i][0] = str(matches[i][0])
+    matches = configure_percentages(matches)
     return matches
