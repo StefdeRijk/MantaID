@@ -136,7 +136,7 @@ class selection_page:
 
         def process_button_function():
             self.process_button_text.set("Loading...")
-            ProcessPage = process_page(master, file)
+            ProcessPage = process_page(master, file, self.attributes)
             show_page(ProcessPage.frame)
 
         #reference image
@@ -188,7 +188,7 @@ class selection_page:
         self.gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
 
 class process_page:
-    def __init__(self, master, file):
+    def __init__(self, master, file, attributes):
         global amount_of_mantas
         self.frame = Frame()
         self.matches = go_through_database(file, amount_of_mantas, database_folder)
@@ -258,11 +258,11 @@ class process_page:
             cancel_button_function()
 
         #new_button
-        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, ""), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, "", attributes), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        def new_button_function(master, file, manta_name):
-            NewMantaPage = new_manta_page(master, file, manta_name)
+        def new_button_function(master, file, manta_name, attributes):
+            NewMantaPage = new_manta_page(master, file, manta_name, attributes)
             self.frame.place_forget()
             show_page(NewMantaPage.frame)
 
@@ -296,38 +296,116 @@ class process_page:
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
 
 class new_manta_page:
-    def __init__(self, master, file, manta_name):
+    def __init__(self, master, file, manta_name, attributes):
         self.frame = Frame()
         self.manta_name = manta_name
         show_background()
 
         #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def cancel_button_function(master, file):
-            PreviousPage = process_page(master, file)
+        def cancel_button_function(master, file, attributes):
+            PreviousPage = process_page(master, file, attributes)
             show_page(PreviousPage.frame)
         
-        add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
-        add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
-        
-        set_manta_name_button = tk.Button(master, text="Set manta name", command=lambda:set_manta_name_button_function(master, file), font=("Raleway", 16), bg="#264b77", fg="white")
-        set_manta_name_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
-        set_manta_name_label = tk.Label(master, text="Name: " + str(self.manta_name), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_manta_name_label.place(relx=0.125, rely=0.1, relwidth=0.4, relheight=0.125)
-        set_manta_name_instruction_label = tk.Label(master, text="Insert new manta name below", font=("Raleway", 16), bg="#006699", fg="white")
-        set_manta_name_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
-        set_manta_name_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
-        set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
+        self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def set_manta_name_button_function(master, file):
-            self.manta_name = set_manta_name_entry_box.get()
-            NewMantaPage = new_manta_page(master, file, self.manta_name)
-            show_page(NewMantaPage.frame)
+        def add_manta_button_function():
+            HomePage = home_page(master, file)
+            self.frame.place_forget()
+            show_page(HomePage.frame)
+        
+        #reference image
+        self.reference_image = Image.open(file)
+        self.reference_image=ImageTk.PhotoImage(self.reference_image)
+        self.height = self.reference_image.height()
+        self.width = self.reference_image.width()
+        self.aspect_ratio = self.width / self.height
+        self.new_width = int(424 * self.aspect_ratio)
+        self.new_reference_image = Image.open(file)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,424), Image.ANTIALIAS)
+        self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
+        self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
+        self.reference_small_label.image = self.resized_reference_image
+        self.reference_small_label.place(relx=0.075, rely=0.1, relwidth=0.25, relheight=0.575)
+
+        self.set_manta_name_button = tk.Button(master, text="Set manta name", command=lambda:set_manta_name_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_manta_name_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
+        self.set_manta_name_label = tk.Label(master, text="Name: " + self.manta_name, font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_manta_name_label.place(relx=0.35, rely=0.1, relwidth=0.175, relheight=0.125)
+        self.set_manta_name_instruction_label = tk.Label(master, text="Insert new manta name below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_manta_name_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
+        self.set_manta_name_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
+        self.set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
+
+        def set_manta_name_button_function(master, file, attributes):
+            new_name = self.set_manta_name_entry_box.get()
+            if new_name:
+                self.manta_name = new_name
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                show_page(NewMantaPage.frame)
+        
+        self.set_manta_species_button = tk.Button(master, text="Set manta species", command=lambda:set_manta_species_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_manta_species_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
+        self.set_manta_species_label = tk.Label(master, text="Species: " + attributes[0], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_manta_species_label.place(relx=0.35, rely=0.25, relwidth=0.175, relheight=0.125)
+        self.set_manta_species_instruction_label = tk.Label(master, text="Change manta species below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_manta_species_instruction_label.place(relx=0.55, rely=0.25, relwidth=0.175, relheight=0.0325)
+        self.set_manta_species_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
+        self.set_manta_species_listbox.place(relx=0.55, rely=0.3, relwidth=0.175, relheight=0.075)
+        self.set_manta_species_listbox.insert(0, "Reef manta")
+        self.set_manta_species_listbox.insert(1, "Oceanic manta")
+        self.set_manta_species_listbox.insert(2, "Unknown")
+
+        def set_manta_species_button_function(attributes):
+            new_species = self.set_manta_species_listbox.get(ANCHOR)
+            if new_species:
+                attributes[0] = new_species
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                show_page(NewMantaPage.frame)
+
+        self.set_manta_colour_button = tk.Button(master, text="Set manta colour", command=lambda:set_manta_colour_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_manta_colour_button.place(relx=0.75, rely=0.4, relwidth=0.125, relheight=0.125)
+        self.set_manta_colour_label = tk.Label(master, text="Colour: " + attributes[1], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_manta_colour_label.place(relx=0.35, rely=0.4, relwidth=0.175, relheight=0.125)
+        self.set_manta_colour_instruction_label = tk.Label(master, text="Change manta colour below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_manta_colour_instruction_label.place(relx=0.55, rely=0.4, relwidth=0.175, relheight=0.0325)
+        self.set_manta_colour_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
+        self.set_manta_colour_listbox.place(relx=0.55, rely=0.45, relwidth=0.175, relheight=0.075)
+        self.set_manta_colour_listbox.insert(0, "Black")
+        self.set_manta_colour_listbox.insert(1, "White")
+        self.set_manta_colour_listbox.insert(2, "Unknown")
+
+        def set_manta_colour_button_function(attributes):
+            new_colour = self.set_manta_colour_listbox.get(ANCHOR)
+            if new_colour:
+                attributes[1] = new_colour
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                show_page(NewMantaPage.frame)
+
+        self.set_manta_gender_button = tk.Button(master, text="Set manta gender", command=lambda:set_manta_gender_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_manta_gender_button.place(relx=0.75, rely=0.55, relwidth=0.125, relheight=0.125)
+        self.set_manta_gender_label = tk.Label(master, text="Gender: " + attributes[2], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_manta_gender_label.place(relx=0.35, rely=0.55, relwidth=0.175, relheight=0.125)
+        self.set_manta_gender_instruction_label = tk.Label(master, text="Change manta gender below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_manta_gender_instruction_label.place(relx=0.55, rely=0.55, relwidth=0.175, relheight=0.0325)
+        self.set_manta_gender_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
+        self.set_manta_gender_listbox.place(relx=0.55, rely=0.6, relwidth=0.175, relheight=0.075)
+        self.set_manta_gender_listbox.insert(0, "Male")
+        self.set_manta_gender_listbox.insert(1, "Female")
+        self.set_manta_gender_listbox.insert(2, "Unknown")
+
+        def set_manta_gender_button_function(attributes):
+            new_gender = self.set_manta_gender_listbox.get(ANCHOR)
+            if new_gender:
+                attributes[2] = new_gender
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                show_page(NewMantaPage.frame)
 
 class show_match_image:
     def __init__(self, master, matches, i):
