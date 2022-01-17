@@ -5,9 +5,13 @@ from tkinter import filedialog
 from IterateDatabase import go_through_database
 import shutil
 
-amount_of_mantas = 3
-database_folder = "Database"
+settings_file = open("settings.txt", "r")
 
+
+amount_of_mantas = int(settings_file.readline().split(" ")[-1])
+database_folder = settings_file.readline().split(" ")[-1]
+
+settings_file.close()
 
 root = tk.Tk()
 root.title("MantaID")
@@ -60,7 +64,21 @@ class settings_page:
 
         def set_matches_button_function():
             global amount_of_mantas
-            amount_of_mantas = int(set_matches_entry_box.get())
+            settings_file_read = open("settings.txt", "r")
+            settings_file_data = settings_file_read.read()
+            settings_file_read.close()
+            first_line = settings_file_data.split("\n")[-2]
+            replace_value = first_line.split(" ")[-1]
+            print(settings_file_data)
+            entered_value = set_matches_entry_box.get()
+            settings_file_data.replace(replace_value, entered_value)
+            settings_file_write = open("settings.txt", "w")
+            print(settings_file_data)
+            settings_file_write.write(settings_file_data)
+            settings_file_write.close()
+            settings_file = open("settings.txt", "r")
+            amount_of_mantas = int(settings_file.readline().split(" ")[-1])
+            settings_file.close()
             settings_button_function(master, previous_page, file)
 
         set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -128,15 +146,13 @@ class selection_page:
             show_page(HomePage.frame)
 
         #process button
-        self.process_button_text = tk.StringVar()
-        self.process_button = tk.Button(master, textvariable=self.process_button_text, command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
-        self.process_button_text.set("Process")
+        self.process_button = tk.Button(master, text="Process", command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
         self.process_button["state"] = "disabled"
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function():
-            self.process_button_text.set("Loading...")
-            ProcessPage = process_page(master, file, self.attributes)
+            matches = go_through_database(file, amount_of_mantas, database_folder)
+            ProcessPage = process_page(master, file, self.attributes, matches)
             show_page(ProcessPage.frame)
 
         #reference image
@@ -188,10 +204,10 @@ class selection_page:
         self.gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
 
 class process_page:
-    def __init__(self, master, file, attributes):
+    def __init__(self, master, file, attributes, matches):
         global amount_of_mantas
         self.frame = Frame()
-        self.matches = go_through_database(file, amount_of_mantas, database_folder)
+        self.matches = matches
         self.match_index = 0
         self.number_of_mantas = amount_of_mantas
         show_background()
