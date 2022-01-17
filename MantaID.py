@@ -1,3 +1,4 @@
+# from nis import match
 import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
@@ -31,8 +32,8 @@ def show_background():
     quit_button = tk.Button(root, text="Quit", command=root.quit, font=("Raleway", 16), bg="#00243f", fg="white", height=4, width=16)
     quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
 
-def settings_button_function(master, page, file):
-    SettingsPage = settings_page(master, page, file)
+def settings_button_function(master, page, file, manta_name, attributes, matches):
+    SettingsPage = settings_page(master, page, file, manta_name, attributes, matches)
     show_page(SettingsPage.frame)
 
 def show_page(page):
@@ -40,17 +41,17 @@ def show_page(page):
 
 
 class settings_page:
-    def __init__(self, master, previous_page, file):
+    def __init__(self, master, previous_page, file, manta_name, attributes, matches):
         global database_folder
         self.frame = Frame()
         self.new_database_folder = None
         show_background()
 
-        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file, manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def back_button_function(previous_page, master, file):
-            PreviousPage = previous_page(master, file)
+        def back_button_function(previous_page, master, file, manta_name, attributes, matches):
+            PreviousPage = previous_page(master, file, manta_name, attributes, matches)
             show_page(PreviousPage.frame)
 
         set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -64,21 +65,20 @@ class settings_page:
 
         def set_matches_button_function():
             global amount_of_mantas
-            settings_file_read = open("settings.txt", "r")
-            settings_file_data = settings_file_read.read()
-            settings_file_read.close()
-            first_line = settings_file_data.split("\n")[-2]
-            replace_value = first_line.split(" ")[-1]
-            print(settings_file_data)
             entered_value = set_matches_entry_box.get()
-            settings_file_data.replace(replace_value, entered_value)
-            settings_file_write = open("settings.txt", "w")
-            print(settings_file_data)
-            settings_file_write.write(settings_file_data)
-            settings_file_write.close()
-            settings_file = open("settings.txt", "r")
-            amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-            settings_file.close()
+            if (entered_value):
+                settings_file_read = open("settings.txt", "r")
+                settings_file_data = settings_file_read.read()
+                settings_file_read.close()
+                first_line = settings_file_data.split("\n")[-2]
+                replace_value = first_line.split(" ")[-1]
+                settings_file_data = settings_file_data.replace(replace_value, entered_value)
+                settings_file_write = open("settings.txt", "w")
+                settings_file_write.write(settings_file_data)
+                settings_file_write.close()
+                settings_file = open("settings.txt", "r")
+                amount_of_mantas = int(settings_file.readline().split(" ")[-1])
+                settings_file.close()
             settings_button_function(master, previous_page, file)
 
         set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -98,16 +98,27 @@ class settings_page:
         def set_database_button_function():
             global database_folder
             if self.new_database_folder:
-                database_folder = self.new_database_folder
+                settings_file_read = open("settings.txt", "r")
+                settings_file_data = settings_file_read.read()
+                settings_file_read.close()
+                first_line = settings_file_data.split("\n")[-1]
+                replace_value = first_line.split(" ")[-1]
+                settings_file_data = settings_file_data.replace(replace_value, self.new_database_folder)
+                settings_file_write = open("settings.txt", "w")
+                settings_file_write.write(settings_file_data)
+                settings_file_write.close()
+                settings_file = open("settings.txt", "r")
+                database_folder = settings_file.read().split(" ")[-1]
+                settings_file.close()
             settings_button_function(master, previous_page, file)
 
 class home_page:
-    def __init__(self, master, file):
+    def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
         show_background()
 
         #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, home_page, None), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, home_page, manta_name, None, None, None), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #open images
@@ -121,20 +132,20 @@ class home_page:
             files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.png; *.jpg")])
             if files:
                 file = files.name
-                SelectionPage = selection_page(master, file)
+                SelectionPage = selection_page(master, file, manta_name, attributes, matches)
                 show_page(SelectionPage.frame)
             else :
                 home_page(root)
 
 class selection_page:
-    def __init__(self, master, file):
+    def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
         self.attributes_number = 0
-        self.attributes = [None] * 3 # species - colour - gender
+        self.attributes = [attributes] * 3 # species - colour - gender
         show_background()
 
         #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, selection_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, selection_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #cancel button
@@ -142,7 +153,7 @@ class selection_page:
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file)
+            HomePage = home_page(master, file, manta_name, attributes, matches)
             show_page(HomePage.frame)
 
         #process button
@@ -152,7 +163,7 @@ class selection_page:
 
         def process_button_function():
             matches = go_through_database(file, amount_of_mantas, database_folder)
-            ProcessPage = process_page(master, file, self.attributes, matches)
+            ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
         #reference image
@@ -204,7 +215,7 @@ class selection_page:
         self.gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
 
 class process_page:
-    def __init__(self, master, file, attributes, matches):
+    def __init__(self, master, file, manta_name, attributes, matches):
         global amount_of_mantas
         self.frame = Frame()
         self.matches = matches
@@ -213,7 +224,7 @@ class process_page:
         show_background()
 
         #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def show_matches():
@@ -229,7 +240,7 @@ class process_page:
         self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file)
+            HomePage = home_page(master, file, manta_name, attributes, self.matches)
             show_page(HomePage.frame)
         
         #previous button
@@ -274,11 +285,11 @@ class process_page:
             cancel_button_function()
 
         #new_button
-        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, "", attributes), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        def new_button_function(master, file, manta_name, attributes):
-            NewMantaPage = new_manta_page(master, file, manta_name, attributes)
+        def new_button_function(master, file, attributes):
+            NewMantaPage = new_manta_page(master, file, "", attributes, self.matches)
             self.frame.place_forget()
             show_page(NewMantaPage.frame)
 
@@ -312,20 +323,20 @@ class process_page:
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
 
 class new_manta_page:
-    def __init__(self, master, file, manta_name, attributes):
+    def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
         self.manta_name = manta_name
         show_background()
 
         #settings_button
-        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file, self.manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function(master, file, attributes):
-            PreviousPage = process_page(master, file, attributes)
+            PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
             show_page(PreviousPage.frame)
         
         self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -450,5 +461,5 @@ class show_match_label:
         self.result_label = tk.Label(master, text=self.result_label_text, font=("Raleway", 16), bg="#b67929", fg="white", height=3, width=16)
         self.result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
 
-HomePage = home_page(root, None)
+HomePage = home_page(root, "", None, None, None)
 root.mainloop()
