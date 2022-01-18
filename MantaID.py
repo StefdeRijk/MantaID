@@ -1,6 +1,7 @@
 # from nis import match
 import tkinter as tk
 from tkinter import *
+from unicodedata import numeric
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
@@ -11,6 +12,8 @@ settings_file = open("settings.txt", "r")
 
 amount_of_mantas = int(settings_file.readline().split(" ")[-1])
 database_folder = settings_file.readline().split(" ")[-1]
+image_size_multiplier = float(settings_file.readline().split(" ")[-1])
+show_all_mantas = bool(int(settings_file.read().split(" ")[-1]))
 
 settings_file.close()
 
@@ -54,11 +57,13 @@ class settings_page:
             PreviousPage = previous_page(master, file, manta_name, attributes, matches)
             show_page(PreviousPage.frame)
 
+        set_matches_button_text = tk.StringVar()
         set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         set_matches_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
         set_matches_label = tk.Label(master, text="Current amount of matches: " + str(amount_of_mantas), font=("Raleway", 16), bg="#3c5b74", fg="white")
         set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.4, relheight=0.125)
-        set_matches_instruction_label = tk.Label(master, text="Insert amount of matches below", font=("Raleway", 16), bg="#006699", fg="white")
+        set_matches_instruction_label = tk.Label(master, textvariable=set_matches_button_text, font=("Raleway", 16), bg="#006699", fg="white")
+        set_matches_button_text.set("Insert amount of matches below")
         set_matches_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
         set_matches_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
         set_matches_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
@@ -66,11 +71,11 @@ class settings_page:
         def set_matches_button_function():
             global amount_of_mantas
             entered_value = set_matches_entry_box.get()
-            if (entered_value):
+            if entered_value and entered_value.isnumeric():
                 settings_file_read = open("settings.txt", "r")
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
-                first_line = settings_file_data.split("\n")[-2]
+                first_line = settings_file_data.split("\n")[0]
                 replace_value = first_line.split(" ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, entered_value)
                 settings_file_write = open("settings.txt", "w")
@@ -79,7 +84,10 @@ class settings_page:
                 settings_file = open("settings.txt", "r")
                 amount_of_mantas = int(settings_file.readline().split(" ")[-1])
                 settings_file.close()
-            settings_button_function(master, previous_page, file)
+            else :
+                set_matches_button_text.set("Please enter a number")
+                return
+            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
 
         set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         set_database_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
@@ -101,16 +109,96 @@ class settings_page:
                 settings_file_read = open("settings.txt", "r")
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
-                first_line = settings_file_data.split("\n")[-1]
+                first_line = settings_file_data.split("\n")[1]
                 replace_value = first_line.split(" ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, self.new_database_folder)
                 settings_file_write = open("settings.txt", "w")
                 settings_file_write.write(settings_file_data)
                 settings_file_write.close()
                 settings_file = open("settings.txt", "r")
-                database_folder = settings_file.read().split(" ")[-1]
+                first_line =settings_file.read().split("\n")[1]
+                database_folder = first_line.split(" ")[-1]
                 settings_file.close()
-            settings_button_function(master, previous_page, file)
+            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
+
+        set_image_multiplier_button_text = tk.StringVar()
+        set_image_multiplier_button = tk.Button(master, text="Set image size", command=lambda:set_image_multiplier_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        set_image_multiplier_button.place(relx=0.75, rely=0.4, relwidth=0.125, relheight=0.125)
+        set_image_multiplier_label = tk.Label(master, text="Current image size: " + str(image_size_multiplier), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        set_image_multiplier_label.place(relx=0.125, rely=0.4, relwidth=0.4, relheight=0.125)
+        set_image_multiplier_instruction_label = tk.Label(master, textvariable=set_image_multiplier_button_text, font=("Raleway", 16), bg="#006699", fg="white")
+        set_image_multiplier_button_text.set("Insert image size below")
+        set_image_multiplier_instruction_label.place(relx=0.55, rely=0.4, relwidth=0.175, relheight=0.0325)
+        set_image_multiplier_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
+        set_image_multiplier_entry_box.place(relx=0.55, rely=0.45, relwidth=0.175, relheight=0.075)
+
+        def isfloat(entered_value):
+            try:
+                float(entered_value)
+                return True
+            except ValueError:
+                return False
+
+        def set_image_multiplier_button_function():
+            global image_size_multiplier
+            entered_value = set_image_multiplier_entry_box.get()
+            if entered_value and isfloat(entered_value):
+                settings_file_read = open("settings.txt", "r")
+                settings_file_data = settings_file_read.read()
+                settings_file_read.close()
+                first_line = settings_file_data.split("\n")[2]
+                replace_value = first_line.split(" ")[-1]
+                settings_file_data = settings_file_data.replace(replace_value, entered_value)
+                settings_file_write = open("settings.txt", "w")
+                settings_file_write.write(settings_file_data)
+                settings_file_write.close()
+                settings_file = open("settings.txt", "r")
+                first_line =settings_file.read().split("\n")[2]
+                image_size_multiplier = float(first_line.split(" ")[-1])
+                settings_file.close()
+            else :
+                set_image_multiplier_button_text.set("Please enter a decimal number")
+                return
+            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
+
+        if show_all_mantas == True:
+            show_mantas_bool = "Yes"
+        else :
+            show_mantas_bool = "No"
+        show_all_mantas_button = tk.Button(master, text="Show all mantas", command=lambda:show_all_mantas_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        show_all_mantas_button.place(relx=0.75, rely=0.55, relwidth=0.125, relheight=0.125)
+        show_all_mantas_label = tk.Label(master, text="Show all mantas: " + show_mantas_bool, font=("Raleway", 16), bg="#3c5b74", fg="white")
+        show_all_mantas_label.place(relx=0.125, rely=0.55, relwidth=0.4, relheight=0.125)
+        show_all_mantas_listbox = tk.Listbox(master, font=("Raleway", 16), bg="#006699", fg="White", justify="center", highlightbackground="Black")
+        show_all_mantas_listbox.insert(0, "")
+        show_all_mantas_listbox.insert(1, "Yes")
+        show_all_mantas_listbox.insert(2, "No")
+        show_all_mantas_listbox.place(relx=0.55, rely=0.55, relwidth=0.175, relheight=0.125)
+
+        def show_all_mantas_button_function():
+            global show_all_mantas
+            entered_value = show_all_mantas_listbox.get(ANCHOR)
+            if entered_value:
+                if entered_value == "Yes":
+                    entered_value = str(1)
+                else :
+                    entered_value = str(0)
+                settings_file_read = open("settings.txt", "r")
+                settings_file_data = settings_file_read.read()
+                settings_file_read.close()
+                first_line = settings_file_data.split("\n")[3]
+                replace_value = first_line.split(" ")[-1]
+                settings_file_data = settings_file_data.replace(replace_value, entered_value)
+                settings_file_write = open("settings.txt", "w")
+                settings_file_write.write(settings_file_data)
+                settings_file_write.close()
+                settings_file = open("settings.txt", "r")
+                first_line =settings_file.read().split("\n")[3]
+                show_all_mantas = bool(int(first_line.split(" ")[-1]))
+                settings_file.close()
+            else :
+                return
+            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
 
 class home_page:
     def __init__(self, master, file, manta_name, attributes, matches):
@@ -172,9 +260,9 @@ class selection_page:
         self.height = self.reference_image.height()
         self.width = self.reference_image.width()
         self.aspect_ratio = self.width / self.height
-        self.new_width = int(324 * self.aspect_ratio)
+        self.new_width = int(324 * self.aspect_ratio * image_size_multiplier)
         self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,324), Image.ANTIALIAS)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(324 * image_size_multiplier)), Image.ANTIALIAS)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
@@ -314,9 +402,9 @@ class process_page:
         self.height = self.reference_image.height()
         self.width = self.reference_image.width()
         self.aspect_ratio = self.width / self.height
-        self.new_width = int(729 * self.aspect_ratio)
+        self.new_width = int(729 * self.aspect_ratio * image_size_multiplier)
         self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,729), Image.ANTIALIAS)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(729 * image_size_multiplier)), Image.ANTIALIAS)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
@@ -353,9 +441,9 @@ class new_manta_page:
         self.height = self.reference_image.height()
         self.width = self.reference_image.width()
         self.aspect_ratio = self.width / self.height
-        self.new_width = int(424 * self.aspect_ratio)
+        self.new_width = int(424 * self.aspect_ratio * image_size_multiplier)
         self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,424), Image.ANTIALIAS)
+        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(424 * image_size_multiplier)), Image.ANTIALIAS)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
@@ -443,9 +531,9 @@ class show_match_image:
         self.height = self.compare_image.height()
         self.width = self.compare_image.width()
         self.aspect_ratio = self.width / self.height
-        self.new_width = int(729 * self.aspect_ratio)
+        self.new_width = int(729 * self.aspect_ratio * image_size_multiplier)
         self.new_compare_image = Image.open(matches[i][1])
-        self.resized_compare_image = self.new_compare_image.resize((self.new_width,729), Image.ANTIALIAS)
+        self.resized_compare_image = self.new_compare_image.resize((self.new_width,int(729 * image_size_multiplier)), Image.ANTIALIAS)
         self.resized_compare_image=ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
         self.compare_label.image = self.resized_compare_image
