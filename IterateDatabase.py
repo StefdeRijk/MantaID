@@ -8,7 +8,22 @@ def configure_percentages(matches):
 		matches[i][0] = str(matches[i][0])
 	return matches
 
-def go_through_database(file, amount_of_mantas, database_folder):
+def get_files(database_folder, attributes):
+    if attributes[0] == "Oceanic manta":
+        files = glob.glob(database_folder + "/MR Master Birostris ID Shots BF" + "/M*")
+    elif attributes[1] == "Black":
+        files = glob.glob(database_folder + "/MR Master Alfredi ID Shots Melanistic BF" + "/M*")
+    elif attributes[2] == "Male":
+        files = glob.glob(database_folder + "/MR Master Alfredi ID Shots Male BF" + "/M*")
+    elif attributes[2] == "Female":
+        files = glob.glob(database_folder + "/MR Master Alfredi ID Shots Female BF" + "/M*")
+    elif attributes[1] == "White":
+        files = glob.glob(database_folder + "/MR Master Alfredi ID Shots *ale BF" + "/M*")
+    else:
+        files = glob.glob(database_folder + "/Cropped Alfredi" + "/M*")
+    return files
+
+def go_through_database(file, amount_of_mantas, database_folder, attributes):
     #index 0 = percentage similar, index 1 = path to file, index 2 = name of manta
     matches = []
     for i in range(amount_of_mantas):
@@ -16,21 +31,22 @@ def go_through_database(file, amount_of_mantas, database_folder):
         matches.append(temp)
     current_folder_results = []
     current_folder_files = []
-    files = glob.glob(database_folder + "/*/*.jpg")
+    files = get_files(database_folder, attributes)
+    print(len(files))
     for i in range(len(files)):
-        current_file = files[i]
-        current_result = image_compare(file, current_file)
-        current_manta_name = current_file.split("\\")[-2]
+        current_file = files[i].split("\\")[-1]
+        current_result = image_compare(file, files[i])
+        current_manta_name = current_file.split("- ")[-1].split(".")[0]
         if i < len(files) - 1:
-            next_manta_name = files[i + 1].split("\\")[-2]
+            next_manta_name = files[i + 1].split("- ")[-1].split(".")[0]
         else :
             next_manta_name = None
         if current_manta_name == next_manta_name:
             current_folder_results.append(current_result)
-            current_folder_files.append(current_file)
+            current_folder_files.append(files[i])
         else :
             current_folder_results.append(current_result)
-            current_folder_files.append(current_file)
+            current_folder_files.append(files[i])
             max_result = max(current_folder_results)
             max_result_index = current_folder_results.index(max_result)
             for j in range(len(matches)):
@@ -44,6 +60,7 @@ def go_through_database(file, amount_of_mantas, database_folder):
                     current_folder_results = []
                     current_folder_files = []
                     max_result = 0
-                    break        
+                    break  
+        print(i)      
     matches = configure_percentages(matches)
     return matches

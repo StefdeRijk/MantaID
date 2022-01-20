@@ -11,7 +11,9 @@ settings_file = open("settings.txt", "r")
 
 
 amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-database_folder = settings_file.readline().split(" ")[-1]
+database_folder = settings_file.readline().split("=")[-1]
+temp = database_folder.strip()
+database_folder = temp
 image_size_multiplier = float(settings_file.readline().split(" ")[-1])
 show_all_mantas = bool(int(settings_file.read().split(" ")[-1]))
 
@@ -76,7 +78,7 @@ class settings_page:
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
                 first_line = settings_file_data.split("\n")[0]
-                replace_value = first_line.split(" ")[-1]
+                replace_value = first_line.split("= ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, entered_value)
                 settings_file_write = open("settings.txt", "w")
                 settings_file_write.write(settings_file_data)
@@ -110,7 +112,7 @@ class settings_page:
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
                 first_line = settings_file_data.split("\n")[1]
-                replace_value = first_line.split(" ")[-1]
+                replace_value = first_line.split("= ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, self.new_database_folder)
                 settings_file_write = open("settings.txt", "w")
                 settings_file_write.write(settings_file_data)
@@ -118,6 +120,8 @@ class settings_page:
                 settings_file = open("settings.txt", "r")
                 first_line =settings_file.read().split("\n")[1]
                 database_folder = first_line.split(" ")[-1]
+                temp = database_folder.strip()
+                database_folder = temp
                 settings_file.close()
             settings_button_function(master, previous_page, file, manta_name, attributes, matches)
 
@@ -147,7 +151,7 @@ class settings_page:
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
                 first_line = settings_file_data.split("\n")[2]
-                replace_value = first_line.split(" ")[-1]
+                replace_value = first_line.split("= ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, entered_value)
                 settings_file_write = open("settings.txt", "w")
                 settings_file_write.write(settings_file_data)
@@ -187,7 +191,7 @@ class settings_page:
                 settings_file_data = settings_file_read.read()
                 settings_file_read.close()
                 first_line = settings_file_data.split("\n")[3]
-                replace_value = first_line.split(" ")[-1]
+                replace_value = first_line.split("= ")[-1]
                 settings_file_data = settings_file_data.replace(replace_value, entered_value)
                 settings_file_write = open("settings.txt", "w")
                 settings_file_write.write(settings_file_data)
@@ -217,7 +221,7 @@ class home_page:
 
         def open_files(file):
             self.open_button_text.set("Loading...")
-            files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.png; *.jpg")])
+            files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.png; *.jpg; *.jpeg; *.JPG")])
             if files:
                 file = files.name
                 SelectionPage = selection_page(master, file, manta_name, attributes, matches)
@@ -250,7 +254,7 @@ class selection_page:
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function():
-            matches = go_through_database(file, amount_of_mantas, database_folder)
+            matches = go_through_database(file, amount_of_mantas, database_folder, self.attributes)
             ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
