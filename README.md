@@ -1,5 +1,6 @@
 # MantaID
-This program is being developed for the manta ID science program at Barefoot Conservation (barefoot.org/manta-ID).
+This program is being developed for the manta ID science program at Barefoot Conservation.
+https://barefootconservation.org/conservation-in-indonesia/barefoot-conservation-science/manta-ray-research
 
 The aim of this program is to have an algorithm go through the database and show the most comparable manta rays compared to the picture that you took.
 Furthermore, this program makes it easier to go through the database and compare manta ray photos with each other.
