@@ -1,32 +1,42 @@
-from skimage.metrics import structural_similarity
 import cv2
+from cv2 import BRISK
+from numpy import mat
 
 def image_compare(file, compare_file):
     #Works well with images of different dimensions
-    def orb_sim(img00, img01):
-        orb = cv2.ORB_create()
-        kp_a, desc_a = orb.detectAndCompute(img00, None)
-        kp_b, desc_b = orb.detectAndCompute(img01, None)
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = bf.match(desc_a, desc_b)
-        similar_regions = [i for i in matches if i.distance < 65]  
-        if len(matches) == 0:
-            return 0
-        return len(similar_regions) / len(matches)
+    # def orb_sim(img00, img01):
+    #     orb = cv2.ORB_create()
+    #     kp_a, desc_a = orb.detectAndCompute(img00, None)
+    #     kp_b, desc_b = orb.detectAndCompute(img01, None)
+    #     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    #     matches = bf.match(desc_a, desc_b)
+    #     similar_regions = [i for i in matches if i.distance < 65]  
+    #     if len(matches) == 0:
+    #         return 0
+    #     return len(similar_regions) / len(matches)
 
-    # #Needs images to be same dimensions
-    # def structural_sim(img00, img01):
-    #     sim, diff = structural_similarity(img00, img01, full=True)
-    #     return sim
+    file_gray = cv2.imread(file, flags = cv2.IMREAD_GRAYSCALE)
+    compare_file_gray = cv2.imread(compare_file, flags = cv2.IMREAD_GRAYSCALE)
 
-    img00 = cv2.imread(compare_file, 0)
-    img01 = cv2.imread(file, 0)
+    # orb_similarity = orb_sim(img00, img01)
 
-    orb_similarity = orb_sim(img00, img01)
+    brisk = cv2.BRISK_create()
+    keypoints_file, descriptors_file = brisk.detectAndCompute(file_gray, None)
+    keypoints_compare_file, descriptors_compare_file = brisk.detectAndCompute(compare_file_gray, None)
+    
 
-    # from skimage.transform import resize
-    # img5 = resize(img01, (img00.shape[0], img00.shape[1]), anti_aliasing=True, preserve_range=True)
+    brute_force = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
 
-    # ssim = structural_sim(img00, img5)
-
-    return orb_similarity # ((ssim * 2) + orb_similarity) / 3
+    matches = brute_force.match(descriptors_file, descriptors_compare_file)
+    matches = sorted(matches, key = lambda x: x.distance)
+    sum_distance = 0
+    for i in range(len(matches)):
+        if (i == 15):
+            break
+        sum_distance += matches[i].distance
+    if sum_distance == 0:
+        sum_distance = 1
+    sum_distance /= 1000
+    sum_distance = 1 / sum_distance * (1 / len(matches))
+    print(sum_distance)
+    return sum_distance
