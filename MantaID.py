@@ -548,8 +548,7 @@ class show_match_label:
         self.frame = Frame()
         #result label
         self.match_name = matches[i][2]
-        self.match_percentage = matches[i][0]
-        self.result_label_text = self.match_name + ": " + self.match_percentage + '%'
+        self.result_label_text = self.match_name
         self.result_label = tk.Label(master, text=self.result_label_text, font=("Raleway", 16), bg="#b67929", fg="white", height=3, width=16)
         self.result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
 

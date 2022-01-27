@@ -1,12 +1,6 @@
 from ImageCompare import image_compare
 import glob
-
-def configure_percentages(matches):
-	for i in range(0, len(matches)):
-		matches[i][0] = matches[i][0] * 100
-		matches[i][0] = int(matches[i][0] + 0.5)
-		matches[i][0] = str(matches[i][0])
-	return matches
+import os
 
 def get_files(database_folder, attributes):
     if attributes[0] == "Oceanic manta":
@@ -34,7 +28,7 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes):
     files = get_files(database_folder, attributes)
     print(len(files))
     for i in range(len(files)):
-        current_file = files[i].split("\\")[-1]
+        current_file = os.path.basename(files[i])
         current_result = image_compare(file, files[i])
         current_manta_name = current_file.split("- ")[-1].split(".")[0]
         if i < len(files) - 1:
@@ -62,5 +56,5 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes):
                     max_result = 0
                     break  
         print(i)      
-    matches = configure_percentages(matches)
+    print(matches)
     return matches
