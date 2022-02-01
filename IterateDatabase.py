@@ -55,6 +55,5 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes):
                     current_folder_files = []
                     max_result = 0
                     break  
-        print(i)      
-    print(matches)
+        print(i)
     return matches

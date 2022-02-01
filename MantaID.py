@@ -1,10 +1,10 @@
 # from nis import match
 import tkinter as tk
 from tkinter import *
-from unicodedata import numeric
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
+from SaveImages import create_new_dir, save_new_image
 import shutil
 
 settings_file = open("settings.txt", "r")
@@ -435,7 +435,9 @@ class new_manta_page:
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def add_manta_button_function():
-            HomePage = home_page(master, file)
+            folder_path, folder_name = create_new_dir(manta_name, attributes, database_folder)
+            save_new_image(file, manta_name, attributes, database_folder, folder_path, folder_name)
+            HomePage = home_page(master, file, manta_name, attributes, matches)
             self.frame.place_forget()
             show_page(HomePage.frame)
         
@@ -466,7 +468,7 @@ class new_manta_page:
             new_name = self.set_manta_name_entry_box.get()
             if new_name:
                 self.manta_name = new_name
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
         
         self.set_manta_species_button = tk.Button(master, text="Set manta species", command=lambda:set_manta_species_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -485,7 +487,7 @@ class new_manta_page:
             new_species = self.set_manta_species_listbox.get(ANCHOR)
             if new_species:
                 attributes[0] = new_species
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
 
         self.set_manta_colour_button = tk.Button(master, text="Set manta colour", command=lambda:set_manta_colour_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -504,7 +506,7 @@ class new_manta_page:
             new_colour = self.set_manta_colour_listbox.get(ANCHOR)
             if new_colour:
                 attributes[1] = new_colour
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
 
         self.set_manta_gender_button = tk.Button(master, text="Set manta gender", command=lambda:set_manta_gender_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -523,7 +525,7 @@ class new_manta_page:
             new_gender = self.set_manta_gender_listbox.get(ANCHOR)
             if new_gender:
                 attributes[2] = new_gender
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
 
 class show_match_image:
