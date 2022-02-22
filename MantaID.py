@@ -6,18 +6,40 @@ from tkinter import filedialog
 from IterateDatabase import go_through_database
 from SaveImages import create_new_dir, save_new_image
 import shutil
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
 settings_file = open("settings.txt", "r")
 
 
 amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-database_folder = settings_file.readline().split("=")[-1]
-temp = database_folder.strip()
-database_folder = temp
 image_size_multiplier = float(settings_file.readline().split(" ")[-1])
 show_all_mantas = bool(int(settings_file.read().split(" ")[-1]))
 
 settings_file.close()
+
+
+gauth = GoogleAuth()
+gauth.LoadCredentialsFile("mycreds.txt")
+if gauth.credentials is None:
+    # Authenticate if they're not there
+    gauth.LocalWebserverAuth()
+elif gauth.access_token_expired:
+    # Refresh them if expired
+    gauth.Refresh()
+else:
+    # Initialize the saved creds
+    gauth.Authorize()
+# Save the current credentials to a file
+gauth.SaveCredentialsFile("mycreds.txt")
+drive = GoogleDrive(gauth)
+fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+for file in fileList:
+    if file["title"] == "1. Raja Ampat Manta DB - ID Individuals":
+        root_folder_id = file["id"]
+
+
+print(root_folder_id)
 
 root = tk.Tk()
 root.title("MantaID")
@@ -47,9 +69,7 @@ def show_page(page):
 
 class settings_page:
     def __init__(self, master, previous_page, file, manta_name, attributes, matches):
-        global database_folder
         self.frame = Frame()
-        self.new_database_folder = None
         show_background()
 
         back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file, manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white")
@@ -89,40 +109,6 @@ class settings_page:
             else :
                 set_matches_button_text.set("Please enter a number")
                 return
-            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
-
-        set_database_button = tk.Button(master, text="Set database folder", command=lambda:set_database_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
-        set_database_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
-        set_database_label = tk.Label(master, text="Current database folder: " + database_folder, font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_database_label.place(relx=0.125, rely=0.25, relwidth=0.4, relheight=0.125)
-        self.browse_button_text = tk.StringVar()
-        browse_button = tk.Button(master, textvariable=self.browse_button_text, command=lambda:browse_button_function(), font=("Raleway", 16), bg="#006699", fg="white")
-        self.browse_button_text.set("Browse")
-        browse_button.place(relx=0.55, rely=0.25, relwidth=0.175, relheight=0.125)
-
-        def browse_button_function():
-            self.browse_button_text.set("Loading...")
-            self.new_database_folder = filedialog.askdirectory(parent=master, title="Choose database folder")
-            self.browse_button_text.set("New folder is: " + self.new_database_folder.split("/")[-1])
-
-        def set_database_button_function():
-            global database_folder
-            if self.new_database_folder:
-                settings_file_read = open("settings.txt", "r")
-                settings_file_data = settings_file_read.read()
-                settings_file_read.close()
-                first_line = settings_file_data.split("\n")[1]
-                replace_value = first_line.split("= ")[-1]
-                settings_file_data = settings_file_data.replace(replace_value, self.new_database_folder)
-                settings_file_write = open("settings.txt", "w")
-                settings_file_write.write(settings_file_data)
-                settings_file_write.close()
-                settings_file = open("settings.txt", "r")
-                first_line =settings_file.read().split("\n")[1]
-                database_folder = first_line.split(" ")[-1]
-                temp = database_folder.strip()
-                database_folder = temp
-                settings_file.close()
             settings_button_function(master, previous_page, file, manta_name, attributes, matches)
 
         set_image_multiplier_button_text = tk.StringVar()
@@ -254,7 +240,7 @@ class selection_page:
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function():
-            matches = go_through_database(file, amount_of_mantas, database_folder, self.attributes)
+            matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
             ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
@@ -435,8 +421,8 @@ class new_manta_page:
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def add_manta_button_function():
-            folder_path, folder_name = create_new_dir(manta_name, attributes, database_folder)
-            save_new_image(file, manta_name, attributes, database_folder, folder_path, folder_name)
+            folder_path, folder_name = create_new_dir(manta_name, attributes, root_folder_id)
+            save_new_image(file, manta_name, attributes, root_folder_id, folder_path, folder_name)
             HomePage = home_page(master, file, manta_name, attributes, matches)
             self.frame.place_forget()
             show_page(HomePage.frame)
@@ -532,13 +518,14 @@ class show_match_image:
     def __init__(self, master, matches, i):
         self.frame = Frame()
         #compare image
-        self.compare_image = Image.open(matches[i][1])
+        matches[i][1].GetContentFile("temp_match.jpeg")
+        self.compare_image = Image.open("temp_match.jpeg")
         self.compare_image = ImageTk.PhotoImage(self.compare_image)
         self.height = self.compare_image.height()
         self.width = self.compare_image.width()
         self.aspect_ratio = self.width / self.height
         self.new_width = int(729 * self.aspect_ratio * image_size_multiplier)
-        self.new_compare_image = Image.open(matches[i][1])
+        self.new_compare_image = Image.open("temp_match.jpeg")
         self.resized_compare_image = self.new_compare_image.resize((self.new_width,int(729 * image_size_multiplier)), Image.ANTIALIAS)
         self.resized_compare_image=ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
