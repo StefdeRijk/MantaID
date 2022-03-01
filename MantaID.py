@@ -4,8 +4,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
-from SaveImages import create_new_dir, save_new_image
-import shutil
+from SaveImages import create_new_dir, save_new_image, save_image, new_name_unique
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
@@ -20,18 +19,16 @@ settings_file.close()
 
 
 gauth = GoogleAuth()
+
 gauth.LoadCredentialsFile("mycreds.txt")
 if gauth.credentials is None:
-    # Authenticate if they're not there
     gauth.LocalWebserverAuth()
 elif gauth.access_token_expired:
-    # Refresh them if expired
     gauth.Refresh()
 else:
-    # Initialize the saved creds
     gauth.Authorize()
-# Save the current credentials to a file
 gauth.SaveCredentialsFile("mycreds.txt")
+
 drive = GoogleDrive(gauth)
 fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
 for file in fileList:
@@ -340,7 +337,7 @@ class process_page:
             show_matches()
 
         def set_button_state():
-            if self.match_index == (self.number_of_mantas - 1):
+            if self.match_index == (self.number_of_mantas - 1) or self.matches[self.match_index + 1][1] == "":
                 self.next_button["state"] = DISABLED
             else :
                 self.next_button["state"] = NORMAL
@@ -352,14 +349,11 @@ class process_page:
         set_button_state()
 
         #save button
-        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, self.matches[self.match_index][1]), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
 
-        def save_button_function(src, dst):
-            dst_cpy = dst.rsplit("\\", 1)[0] + "\\"
-            manta_name = dst.split("\\")[-2]
-            dst = dst_cpy + manta_name + "10.jpg"
-            shutil.copy2(src, dst)
+        def save_button_function(file, drive):
+            save_image(file, drive, self.matches[self.match_index][1], root_folder_id)
             cancel_button_function()
 
         #new_button
@@ -421,8 +415,8 @@ class new_manta_page:
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def add_manta_button_function():
-            folder_path, folder_name = create_new_dir(manta_name, attributes, root_folder_id)
-            save_new_image(file, manta_name, attributes, root_folder_id, folder_path, folder_name)
+            folder_id, folder_name = create_new_dir(manta_name, attributes, root_folder_id, drive)
+            save_new_image(file, folder_id, folder_name, drive)
             HomePage = home_page(master, file, manta_name, attributes, matches)
             self.frame.place_forget()
             show_page(HomePage.frame)
@@ -441,11 +435,13 @@ class new_manta_page:
         self.reference_small_label.image = self.resized_reference_image
         self.reference_small_label.place(relx=0.075, rely=0.1, relwidth=0.25, relheight=0.575)
 
+        self.manta_name_button_text = tk.StringVar()
         self.set_manta_name_button = tk.Button(master, text="Set manta name", command=lambda:set_manta_name_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         self.set_manta_name_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
         self.set_manta_name_label = tk.Label(master, text="Name: " + self.manta_name, font=("Raleway", 16), bg="#3c5b74", fg="white")
         self.set_manta_name_label.place(relx=0.35, rely=0.1, relwidth=0.175, relheight=0.125)
-        self.set_manta_name_instruction_label = tk.Label(master, text="Insert new manta name below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_manta_name_instruction_label = tk.Label(master, textvariable=self.manta_name_button_text, font=("Raleway", 16), bg="#006699", fg="white")
+        self.manta_name_button_text.set("Insert new manta name below")
         self.set_manta_name_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
         self.set_manta_name_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
         self.set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
@@ -453,9 +449,16 @@ class new_manta_page:
         def set_manta_name_button_function(master, file, attributes):
             new_name = self.set_manta_name_entry_box.get()
             if new_name:
-                self.manta_name = new_name
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
-                show_page(NewMantaPage.frame)
+                if attributes[1] == "Black":
+                    if new_name.find("Black"):
+                        self.manta_name_button_text.set("Name must include 'Black'")
+                        return
+                if new_name_unique(new_name, drive, root_folder_id):
+                    self.manta_name = new_name
+                    NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
+                    show_page(NewMantaPage.frame)
+                else:
+                    self.manta_name_button_text.set("Name must be unique")
         
         self.set_manta_species_button = tk.Button(master, text="Set manta species", command=lambda:set_manta_species_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         self.set_manta_species_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)

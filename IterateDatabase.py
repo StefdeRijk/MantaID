@@ -38,7 +38,6 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes, dri
     current_folder_results = []
     current_folder_files = []
     files = get_files(database_folder, attributes, drive)
-    print(files[3])
     print(len(files))
     for i in range(len(files)):
         current_file = files[i]["title"]

@@ -1,5 +1,4 @@
 import cv2
-# from cv2 import BRISK
 
 def image_compare(file, compare_file):
     file_gray = cv2.imread(file, flags = cv2.IMREAD_GRAYSCALE)
