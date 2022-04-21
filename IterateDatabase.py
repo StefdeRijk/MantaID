@@ -1,32 +1,39 @@
 from ImageCompare import image_compare
+from SaveImages import get_folder_id
+
+def append_file_list(list, file_list, filter1, filter2):
+    for file in file_list:
+        if filter1 in file["title"] and filter2 in file["title"]:
+            list.append(file)
+    return (list)
+
+def append_file_list_white(list, file_list, filter1, filter2):
+    for file in file_list:
+        if filter1 not in file["title"] and filter2 in file["title"]:
+            list.append(file)
+    return (list)
 
 def get_files(database_folder, attributes, drive):
-    fileList = drive.ListFile({'q': "'" + database_folder + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
+    files = []
+    if attributes[1] == "Black" and (attributes[2] == "Male" or attributes[2] == "Unknown"):
+        folder = get_folder_id(database_folder, "Black", drive)
+        files = append_file_list(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".M")
+    if attributes[1] == "Black" and (attributes[2] == "Female" or attributes[2] == "Unknown"):
+        folder = get_folder_id(database_folder, "Black", drive)
+        files = append_file_list(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".F")
+    if attributes[1] == "Black" and attributes[2] == "Unknown":
+        folder = get_folder_id(database_folder, "Black", drive)
+        files = append_file_list(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".U")
 
-    if attributes[0] == "Oceanic manta":
-        for file in fileList:
-            if file["title"] == "MR Master Birostris ID Shots BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
-    elif attributes[1] == "Black":
-        for file in fileList:
-            if file["title"] == "MR Master Alfredi ID Shots Melanistic BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
-    elif attributes[2] == "Male":
-        for file in fileList:
-            if file["title"] == "MR Master Alfredi ID Shots Male BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
-    elif attributes[2] == "Female":
-        for file in fileList:
-            if file["title"] == "MR Master Alfredi ID Shots Female BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
-    elif attributes[1] == "White":
-        for file in fileList:
-            if file["title"] == "MR Master Alfredi ID Shots *ale BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
-    else:
-        for file in fileList:
-            if file["title"] == "MR Master Birostris ID Shots BF":
-                files = drive.ListFile({'q': "'" + file["id"] + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
+    if attributes[1] == "White" and (attributes[2] == "Male" or attributes[2] == "Unknown"):
+        folder = get_folder_id(database_folder, "White", drive)
+        files = append_file_list_white(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".M")
+    if attributes[1] == "White" and (attributes[2] == "Female" or attributes[2] == "Unknown"):
+        folder = get_folder_id(database_folder, "White", drive)
+        files = append_file_list_white(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".F")
+    if attributes[1] == "White" and attributes[2] == "Unknown":
+        folder = get_folder_id(database_folder, "White", drive)
+        files = append_file_list_white(files, drive.ListFile({'q': "'" + folder + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList(), "Black", ".U")
     return files
 
 def go_through_database(file, amount_of_mantas, database_folder, attributes, drive):
@@ -38,10 +45,12 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes, dri
     current_folder_results = []
     current_folder_files = []
     files = get_files(database_folder, attributes, drive)
+    for filess in files:
+        print(filess["title"])
     print(len(files))
     for i in range(len(files)):
         current_file = files[i]["title"]
-        files[i].GetContentFile("temp.jpeg")
+        files[i].GetContentFile("temp.jpeg", mimetype="image/jpeg")
         current_result = image_compare(file, "temp.jpeg")
         current_manta_name = current_file.split("- ")[-1].split(".")[0]
         if i < len(files) - 1:

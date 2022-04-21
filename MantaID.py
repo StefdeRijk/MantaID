@@ -1,10 +1,9 @@
-# from nis import match
 import tkinter as tk
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
-from SaveImages import create_new_dir, save_new_image, save_image, new_name_unique
+from SaveImages import create_new_dir, save_new_image, save_image, new_name_unique, get_folder_id
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
@@ -32,7 +31,7 @@ gauth.SaveCredentialsFile("mycreds.txt")
 drive = GoogleDrive(gauth)
 fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
 for file in fileList:
-    if file["title"] == "1. Raja Ampat Manta DB - ID Individuals":
+    if "Database" in file["title"]:
         root_folder_id = file["id"]
 
 
@@ -237,6 +236,11 @@ class selection_page:
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function():
+            global root_folder_id
+            if "Oceanic" in self.attributes[0]:
+                root_folder_id = get_folder_id(root_folder_id, "birostris", drive)
+            elif "Reef" in self.attributes[0]:
+                root_folder_id = get_folder_id(root_folder_id, "alfredi", drive)
             matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
             ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
@@ -267,7 +271,6 @@ class selection_page:
         self.species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.2)
         self.species_listbox.insert(0, "Reef manta")
         self.species_listbox.insert(1, "Oceanic manta")
-        self.species_listbox.insert(2, "Unknown")
         self.species_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(0, self.species_listbox, self.species_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
         self.species_select_button.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.05)
 
@@ -276,7 +279,6 @@ class selection_page:
         self.colour_listbox.place(relx=0.175, rely=0.4, relwidth=0.3, relheight=0.2)
         self.colour_listbox.insert(0, "Black")
         self.colour_listbox.insert(1, "White")
-        self.colour_listbox.insert(2, "Unknown")
         self.colour_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(1, self.colour_listbox, self.colour_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
         self.colour_select_button.place(relx=0.175, rely=0.65, relwidth=0.3, relheight=0.05)
 
@@ -353,8 +355,8 @@ class process_page:
         self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
 
         def save_button_function(file, drive):
-            save_image(file, drive, self.matches[self.match_index][1], root_folder_id)
-            cancel_button_function()
+            SavePage = save_page(master, file, "", attributes, self.matches, self.match_index)
+            show_page(SavePage.frame)
 
         #new_button
         new_button = tk.Button(master, text="New manta", command=lambda:new_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
@@ -372,7 +374,7 @@ class process_page:
         def remove_button_function():
             self.matches.pop(self.match_index)
             if self.match_index == (self.number_of_mantas - 1):
-                    self.match_index -= 1
+                self.match_index -= 1
             self.number_of_mantas -= 1
             if self.number_of_mantas == 0:
                 cancel_button_function()
@@ -516,6 +518,31 @@ class new_manta_page:
                 attributes[2] = new_gender
                 NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
+
+class save_page:
+     def __init__(self, master, file, manta_name, attributes, matches, match_index):
+            self.frame = Frame()
+            show_background()
+
+            #settings_button
+            settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+            settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+            #retry button
+            self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+            self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+            def cancel_button_function():
+                HomePage = home_page(master, file, manta_name, attributes, matches)
+                show_page(HomePage.frame)
+            
+            #save button
+            self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+            self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+
+            def save_button_function(file, drive):
+                save_image(file, drive, matches[match_index][1], root_folder_id)
+                cancel_button_function()
 
 class show_match_image:
     def __init__(self, master, matches, i):
