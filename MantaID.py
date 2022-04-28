@@ -3,7 +3,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
-from SaveImages import create_new_dir, save_new_image, save_image, new_name_unique, get_folder_id
+from SaveImages import save_new_manta, save_image, new_name_unique, get_folder_id
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
@@ -59,9 +59,24 @@ def settings_button_function(master, page, file, manta_name, attributes, matches
     SettingsPage = settings_page(master, page, file, manta_name, attributes, matches)
     show_page(SettingsPage.frame)
 
+def get_resized_image(reference_image, frame, file, widget_width, widget_height):
+    aspect_ratio_img = reference_image.width() / reference_image.height()
+    frame.update()
+    aspect_ratio_label = (frame.winfo_screenwidth() * widget_width) / (frame.winfo_screenheight() * widget_height - 10)
+    if aspect_ratio_img > aspect_ratio_label:
+        new_width = int(frame.winfo_screenwidth() * widget_width * image_size_multiplier)
+        new_height = int(new_width / aspect_ratio_img)
+    else:
+        new_height = int(frame.winfo_screenheight() * widget_height * image_size_multiplier)
+        new_width = int(new_height * aspect_ratio_img)
+    new_reference_image = Image.open(file)
+    resized_reference_image = new_reference_image.resize((new_width, new_height), Image.ANTIALIAS)
+    return (resized_reference_image)
+    
+
 def show_page(page):
     page.place(relx=0, rely=0, relwidth=1, relheight=1)
-
+        
 
 class settings_page:
     def __init__(self, master, previous_page, file, manta_name, attributes, matches):
@@ -215,7 +230,7 @@ class selection_page:
     def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
         self.attributes_number = 0
-        self.attributes = [attributes] * 3 # species - colour - gender
+        self.attributes = [attributes] * 5 # species - colour - gender - dive site - date
         show_background()
 
         #settings_button
@@ -248,48 +263,62 @@ class selection_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.height = self.reference_image.height()
-        self.width = self.reference_image.width()
-        self.aspect_ratio = self.width / self.height
-        self.new_width = int(324 * self.aspect_ratio * image_size_multiplier)
-        self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(324 * image_size_multiplier)), Image.ANTIALIAS)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.3, 0.3)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
         self.reference_small_label.place(relx=0.175, rely=0.05, relwidth=0.3, relheight=0.3)
 
         def select_attributes(index, listbox, button):
-            self.attributes[index] = listbox.get(ANCHOR)
+            if index < 3:
+                self.attributes[index] = listbox.get(ANCHOR)
+            else:
+                self.attributes[index] = self.set_dive_site_entry_box.get()
             button["state"] = DISABLED
             self.attributes_number += 1
-            if self.attributes_number == 3:
+            if self.attributes_number == 4:
                 self.process_button["state"] = NORMAL
 
         #species listbox
         self.species_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
-        self.species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.2)
+        self.species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.15)
         self.species_listbox.insert(0, "Reef manta")
         self.species_listbox.insert(1, "Oceanic manta")
         self.species_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(0, self.species_listbox, self.species_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
-        self.species_select_button.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.05)
+        self.species_select_button.place(relx=0.525, rely=0.225, relwidth=0.3, relheight=0.04)
 
         #colour listbox
         self.colour_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
-        self.colour_listbox.place(relx=0.175, rely=0.4, relwidth=0.3, relheight=0.2)
+        self.colour_listbox.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.15)
         self.colour_listbox.insert(0, "Black")
         self.colour_listbox.insert(1, "White")
         self.colour_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(1, self.colour_listbox, self.colour_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
-        self.colour_select_button.place(relx=0.175, rely=0.65, relwidth=0.3, relheight=0.05)
+        self.colour_select_button.place(relx=0.525, rely=0.475, relwidth=0.3, relheight=0.04)
 
         #gender listbox
         self.gender_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
-        self.gender_listbox.place(relx=0.525, rely=0.4, relwidth=0.3, relheight=0.2)
+        self.gender_listbox.place(relx=0.525, rely=0.55, relwidth=0.3, relheight=0.15)
         self.gender_listbox.insert(0, "Male")
         self.gender_listbox.insert(1, "Female")
         self.gender_listbox.insert(2, "Unknown")
         self.gender_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(2, self.gender_listbox, self.gender_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
-        self.gender_select_button.place(relx=0.525, rely=0.65, relwidth=0.3, relheight=0.05)
+        self.gender_select_button.place(relx=0.525, rely=0.725, relwidth=0.3, relheight=0.04)
+
+        #date enty_box
+        self.date_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.date_listbox.place(relx=0.175, rely=0.3, relwidth=0.3, relheight=0.15)
+        self.date_listbox.insert(0, "Black")
+        self.date_listbox.insert(1, "White")
+        self.date_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(5, None, self.date_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
+        self.date_select_button.place(relx=0.175, rely=0.475, relwidth=0.3, relheight=0.04)
+
+        #dive site entry_box
+        self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:select_attributes(3, None, self.set_dive_site_button), font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_dive_site_button.place(relx=0.175, rely=0.725, relwidth=0.3, relheight=0.04)
+        self.set_dive_site_label = tk.Label(master, text="Enter dive site below: ", font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_dive_site_label.place(relx=0.175, rely=0.55, relwidth=0.3, relheight=0.07)
+        self.set_dive_site_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#264b77", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
+        self.set_dive_site_entry_box.place(relx=0.175, rely=0.63, relwidth=0.3, relheight=0.07)
 
 class process_page:
     def __init__(self, master, file, manta_name, attributes, matches):
@@ -363,9 +392,9 @@ class process_page:
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def new_button_function(master, file, attributes):
-            NewMantaPage = new_manta_page(master, file, "", attributes, self.matches)
+            WarningPage = warning_page(master, file, "", attributes, self.matches)
             self.frame.place_forget()
-            show_page(NewMantaPage.frame)
+            show_page(WarningPage.frame)
 
         #remove button
         self.remove_button = tk.Button(master, text="Remove suggestion", command=lambda:remove_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
@@ -385,16 +414,39 @@ class process_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.height = self.reference_image.height()
-        self.width = self.reference_image.width()
-        self.aspect_ratio = self.width / self.height
-        self.new_width = int(729 * self.aspect_ratio * image_size_multiplier)
-        self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(729 * image_size_multiplier)), Image.ANTIALIAS)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
+
+class warning_page:
+    def __init__(self, master, file, manta_name, attributes, matches):
+        self.frame = Frame()
+        self.manta_name = manta_name
+        show_background()
+
+        #settings_button
+        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file, self.manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function(master, file, attributes):
+            PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
+            show_page(PreviousPage.frame)
+
+        self.warning_label = tk.Label(master, text="Warning!\n\nPlease ask a project scientist \nto check if the manta \nis a new individual.", font=("Raleway", 46), bg="#bc5334", fg="white")
+        self.warning_label.place(relx=0.1, rely=0.05, relwidth=0.75, relheight=0.7)
+        
+        continue_button = tk.Button(master, text="Continue", command=lambda:continue_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        continue_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def continue_button_function():
+            NewMantaPage = new_manta_page(master, file, "", attributes, matches)
+            self.frame.place_forget()
+            show_page(NewMantaPage.frame)
 
 class new_manta_page:
     def __init__(self, master, file, manta_name, attributes, matches):
@@ -417,8 +469,7 @@ class new_manta_page:
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def add_manta_button_function():
-            folder_id, folder_name = create_new_dir(manta_name, attributes, root_folder_id, drive)
-            save_new_image(file, folder_id, folder_name, drive)
+            save_new_manta(manta_name, attributes, root_folder_id, file, drive)
             HomePage = home_page(master, file, manta_name, attributes, matches)
             self.frame.place_forget()
             show_page(HomePage.frame)
@@ -426,12 +477,7 @@ class new_manta_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.height = self.reference_image.height()
-        self.width = self.reference_image.width()
-        self.aspect_ratio = self.width / self.height
-        self.new_width = int(424 * self.aspect_ratio * image_size_multiplier)
-        self.new_reference_image = Image.open(file)
-        self.resized_reference_image = self.new_reference_image.resize((self.new_width,int(424 * image_size_multiplier)), Image.ANTIALIAS)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.25, 0.575)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
@@ -449,6 +495,7 @@ class new_manta_page:
         self.set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
 
         def set_manta_name_button_function(master, file, attributes):
+            global root_folder_id
             new_name = self.set_manta_name_entry_box.get()
             if new_name:
                 if attributes[1] == "Black":
@@ -541,6 +588,7 @@ class save_page:
             self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
 
             def save_button_function(file, drive):
+                global root_folder_id
                 save_image(file, drive, matches[match_index][1], root_folder_id)
                 cancel_button_function()
 
@@ -551,12 +599,7 @@ class show_match_image:
         matches[i][1].GetContentFile("temp_match.jpeg")
         self.compare_image = Image.open("temp_match.jpeg")
         self.compare_image = ImageTk.PhotoImage(self.compare_image)
-        self.height = self.compare_image.height()
-        self.width = self.compare_image.width()
-        self.aspect_ratio = self.width / self.height
-        self.new_width = int(729 * self.aspect_ratio * image_size_multiplier)
-        self.new_compare_image = Image.open("temp_match.jpeg")
-        self.resized_compare_image = self.new_compare_image.resize((self.new_width,int(729 * image_size_multiplier)), Image.ANTIALIAS)
+        self.resized_compare_image = get_resized_image(self.compare_image, self.frame, "temp_match.jpeg", 0.425, 0.675)
         self.resized_compare_image=ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
         self.compare_label.image = self.resized_compare_image
