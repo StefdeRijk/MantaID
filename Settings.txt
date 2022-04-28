@@ -1,0 +1,3 @@
+Amount of mantas = 20
+Image size multiplier = 1
+Show all mantas = 0
