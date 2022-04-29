@@ -11,7 +11,6 @@ settings_file = open("settings.txt", "r")
 
 
 amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-image_size_multiplier = float(settings_file.readline().split(" ")[-1])
 show_all_mantas = bool(int(settings_file.read().split(" ")[-1]))
 
 settings_file.close()
@@ -64,10 +63,10 @@ def get_resized_image(reference_image, frame, file, widget_width, widget_height)
     frame.update()
     aspect_ratio_label = (frame.winfo_screenwidth() * widget_width) / (frame.winfo_screenheight() * widget_height - 10)
     if aspect_ratio_img > aspect_ratio_label:
-        new_width = int(frame.winfo_screenwidth() * widget_width * image_size_multiplier)
+        new_width = int(frame.winfo_screenwidth() * widget_width)
         new_height = int(new_width / aspect_ratio_img)
     else:
-        new_height = int(frame.winfo_screenheight() * widget_height * image_size_multiplier)
+        new_height = int(frame.winfo_screenheight() * widget_height)
         new_width = int(new_height * aspect_ratio_img)
     new_reference_image = Image.open(file)
     resized_reference_image = new_reference_image.resize((new_width, new_height), Image.ANTIALIAS)
@@ -119,46 +118,6 @@ class settings_page:
                 settings_file.close()
             else :
                 set_matches_button_text.set("Please enter a number")
-                return
-            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
-
-        set_image_multiplier_button_text = tk.StringVar()
-        set_image_multiplier_button = tk.Button(master, text="Set image size", command=lambda:set_image_multiplier_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
-        set_image_multiplier_button.place(relx=0.75, rely=0.4, relwidth=0.125, relheight=0.125)
-        set_image_multiplier_label = tk.Label(master, text="Current image size: " + str(image_size_multiplier), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_image_multiplier_label.place(relx=0.125, rely=0.4, relwidth=0.4, relheight=0.125)
-        set_image_multiplier_instruction_label = tk.Label(master, textvariable=set_image_multiplier_button_text, font=("Raleway", 16), bg="#006699", fg="white")
-        set_image_multiplier_button_text.set("Insert image size below")
-        set_image_multiplier_instruction_label.place(relx=0.55, rely=0.4, relwidth=0.175, relheight=0.0325)
-        set_image_multiplier_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
-        set_image_multiplier_entry_box.place(relx=0.55, rely=0.45, relwidth=0.175, relheight=0.075)
-
-        def isfloat(entered_value):
-            try:
-                float(entered_value)
-                return True
-            except ValueError:
-                return False
-
-        def set_image_multiplier_button_function():
-            global image_size_multiplier
-            entered_value = set_image_multiplier_entry_box.get()
-            if entered_value and isfloat(entered_value):
-                settings_file_read = open("settings.txt", "r")
-                settings_file_data = settings_file_read.read()
-                settings_file_read.close()
-                first_line = settings_file_data.split("\n")[2]
-                replace_value = first_line.split("= ")[-1]
-                settings_file_data = settings_file_data.replace(replace_value, entered_value)
-                settings_file_write = open("settings.txt", "w")
-                settings_file_write.write(settings_file_data)
-                settings_file_write.close()
-                settings_file = open("settings.txt", "r")
-                first_line =settings_file.read().split("\n")[2]
-                image_size_multiplier = float(first_line.split(" ")[-1])
-                settings_file.close()
-            else :
-                set_image_multiplier_button_text.set("Please enter a decimal number")
                 return
             settings_button_function(master, previous_page, file, manta_name, attributes, matches)
 
@@ -226,6 +185,39 @@ class home_page:
             else :
                 home_page(root)
 
+class large_img_page:
+    def __init__(self, master, file, manta_name, attributes, matches):
+        self.frame = Frame()
+        show_background()
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #cancel button
+        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function():
+            HomePage = home_page(master, file, manta_name, attributes, matches)
+            show_page(HomePage.frame)
+        
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def back_button_function(master, file, attributes):
+            PreviousPage = selection_page(master, file, manta_name, attributes, matches)
+            show_page(PreviousPage.frame)
+        
+        #large image
+        self.large_image = Image.open(file)
+        self.large_image=ImageTk.PhotoImage(self.large_image)
+        self.resized_large_image = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
+        self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
+        self.large_label = tk.Label(master, image=self.resized_large_image, bg="#264b77")
+        self.large_label.image = self.resized_large_image
+        self.large_label.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
+
 class selection_page:
     def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
@@ -260,23 +252,49 @@ class selection_page:
             ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
+        def show_full_img_button_function():
+            LargeImgPage = large_img_page(master, file, manta_name, self.attributes, matches)
+            show_page(LargeImgPage.frame)
+
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.3, 0.3)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.3, 0.15)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
-        self.reference_small_label.place(relx=0.175, rely=0.05, relwidth=0.3, relheight=0.3)
+        self.reference_small_label.place(relx=0.175, rely=0.05, relwidth=0.3, relheight=0.15)
+        self.show_full_img_button = tk.Button(root, text="Show large image", command=lambda:show_full_img_button_function(), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
+        self.show_full_img_button.place(relx=0.175, rely=0.225, relwidth=0.3, relheight=0.04)
 
-        def select_attributes(index, listbox, button):
+        def correct_date_format(string):
+            if string[2] != '-' or string[5] != '-':
+                return 0
+            day = ""
+            day = string[0:1]
+            if int(day) > 31 or not day.isnumeric():
+                return 0
+            month = ""
+            month = string[3:4]
+            if int(month) > 12 or not month.isnumeric():
+                return 0
+            year = ""
+            year = string[6:7]
+            if not year.isnumeric():
+                return 0
+            return 1
+
+        def select_attributes(index, box, button):
+            if index == 3 and not correct_date_format(box.get()):
+                self.date_button_text.set("Wrong date format: DD-MM-YY")
+                return 
             if index < 3:
-                self.attributes[index] = listbox.get(ANCHOR)
+                self.attributes[index] = box.get(ANCHOR)
             else:
-                self.attributes[index] = self.set_dive_site_entry_box.get()
+                self.attributes[index] = box.get()
             button["state"] = DISABLED
             self.attributes_number += 1
-            if self.attributes_number == 4:
+            if self.attributes_number == 5:
                 self.process_button["state"] = NORMAL
 
         #species listbox
@@ -304,16 +322,18 @@ class selection_page:
         self.gender_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(2, self.gender_listbox, self.gender_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
         self.gender_select_button.place(relx=0.525, rely=0.725, relwidth=0.3, relheight=0.04)
 
-        #date enty_box
-        self.date_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
-        self.date_listbox.place(relx=0.175, rely=0.3, relwidth=0.3, relheight=0.15)
-        self.date_listbox.insert(0, "Black")
-        self.date_listbox.insert(1, "White")
-        self.date_select_button = tk.Button(root, text="Select", command=lambda:select_attributes(5, None, self.date_select_button), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
-        self.date_select_button.place(relx=0.175, rely=0.475, relwidth=0.3, relheight=0.04)
+        #date entry_box
+        self.date_button_text = tk.StringVar()
+        self.date_button_text.set("Enter date below: DD-MM-YY")
+        self.date_button = tk.Button(master, text="Set date", command=lambda:select_attributes(3, self.date_entry_box, self.date_button), font=("Raleway", 16), bg="#006699", fg="white")
+        self.date_button.place(relx=0.175, rely=0.475, relwidth=0.3, relheight=0.04)
+        self.date_label = tk.Label(master, textvariable=self.date_button_text, font=("Raleway", 16), bg="#264b77", fg="white")
+        self.date_label.place(relx=0.175, rely=0.3, relwidth=0.3, relheight=0.07)
+        self.date_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#264b77", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
+        self.date_entry_box.place(relx=0.175, rely=0.38, relwidth=0.3, relheight=0.07)
 
         #dive site entry_box
-        self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:select_attributes(3, None, self.set_dive_site_button), font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:select_attributes(4, self.set_dive_site_entry_box, self.set_dive_site_button), font=("Raleway", 16), bg="#006699", fg="white")
         self.set_dive_site_button.place(relx=0.175, rely=0.725, relwidth=0.3, relheight=0.04)
         self.set_dive_site_label = tk.Label(master, text="Enter dive site below: ", font=("Raleway", 16), bg="#264b77", fg="white")
         self.set_dive_site_label.place(relx=0.175, rely=0.55, relwidth=0.3, relheight=0.07)
@@ -430,10 +450,10 @@ class warning_page:
         self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file, self.manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
         self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
-        back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def cancel_button_function(master, file, attributes):
+        def back_button_function(master, file, attributes):
             PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
             show_page(PreviousPage.frame)
 
