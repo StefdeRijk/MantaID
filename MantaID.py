@@ -77,15 +77,15 @@ def correct_date_format(string):
         return 0
     day = ""
     day = string[0:2]
-    if (int(day) > 31 and int(day) > 0) or not day.isnumeric():
+    if int(day) > 31 or int(day) < 0 or not day.isnumeric():
         return 0
     month = ""
     month = string[3:5]
-    if (int(month) > 12 and int(month) > 0)  or not month.isnumeric():
+    if int(month) > 12 or int(month) < 0  or not month.isnumeric():
         return 0
     year = ""
     year = string[6:8]
-    if int(year) > 0 or not year.isnumeric():
+    if int(year) < 0 or not year.isnumeric():
         return 0
     return 1
 
@@ -238,7 +238,7 @@ class selection_page:
     def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
         self.attributes_number = 0
-        self.attributes = [attributes] * 5 # species - colour - gender - dive site - date
+        self.attributes = [attributes] * 5 # species - colour - gender - date - dive site
         show_background()
 
         #settings_button
@@ -621,7 +621,7 @@ class save_page:
 
             def save_button_function(file, drive):
                 global root_folder_id
-                save_image(file, drive, matches[match_index][1], root_folder_id)
+                save_image(file, drive, matches[match_index][1], root_folder_id, attributes)
                 cancel_button_function()
 
 class show_match_image:

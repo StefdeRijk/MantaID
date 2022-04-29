@@ -1,3 +1,6 @@
+from multiprocessing import managers
+
+
 def	get_folder_id(root_dir, target_dir_title, drive):
 	fileList = drive.ListFile({'q': "'" + root_dir + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
 	for file in fileList:
@@ -14,20 +17,40 @@ def get_folders_for_all_mantas(drive):
 	alfredi_dir = drive.ListFile({'q': "'" + alfredi_dir + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
 	return (alfredi_dir, birostris_dir)
 
-def create_new_dir(manta_name, attributes, database_folder, drive):
-	alfredi_dir, birostris_dir = get_folders_for_all_mantas(drive)
-	highest_id = -1
-	for file in alfredi_dir:
-		current_manta_id = int(file["title"].split(".")[0].split("-")[-1])
-		if current_manta_id > highest_id:
-			highest_id = current_manta_id
-	for file in birostris_dir:
-		current_manta_id = int(file["title"].split(".")[0].split("-")[-1])
-		if current_manta_id > highest_id:
-			highest_id = current_manta_id
-	last_manta_id = highest_id
-	new_manta_id = last_manta_id + 1
+def format_date(date):
+	new_date = ""
+	new_date = date[0:2]
+	if int(date[3:5]) == 1:
+		new_date += "Jan"
+	elif int(date[3:5]) == 2:
+		new_date += "Feb"
+	elif int(date[3:5]) == 3:
+		new_date += "Mar"
+	elif int(date[3:5]) == 4:
+		new_date += "Apr"
+	elif int(date[3:5]) == 5:
+		new_date += "May"
+	elif int(date[3:5]) == 6:
+		new_date += "Jun"
+	elif int(date[3:5]) == 7:
+		new_date += "Jul"
+	elif int(date[3:5]) == 8:
+		new_date += "Aug"
+	elif int(date[3:5]) == 9:
+		new_date += "Sep"
+	elif int(date[3:5]) == 10:
+		new_date += "Oct"
+	elif int(date[3:5]) == 11:
+		new_date += "Nov"
+	elif int(date[3:5]) == 12:
+		new_date += "Dec"
+	new_date += date[6:8]
+	return new_date
 
+def get_manta_id(manta_name):
+	return int(manta_name.split(".")[0].split("-")[-1])
+
+def get_species_and_sex_letter(attributes):
 	if attributes[0] == "Reef manta":
 		species_letter = ".A"
 	elif attributes[0] == "Oceanic manta":
@@ -40,6 +63,23 @@ def create_new_dir(manta_name, attributes, database_folder, drive):
 		sex_letter = ".F"
 	else:
 		sex_letter = ".U"
+	return species_letter, sex_letter
+
+def create_new_dir(manta_name, attributes, database_folder, drive):
+	alfredi_dir, birostris_dir = get_folders_for_all_mantas(drive)
+	highest_id = -1
+	for file in alfredi_dir:
+		current_manta_id = get_manta_id(file["title"])
+		if current_manta_id > highest_id:
+			highest_id = current_manta_id
+	for file in birostris_dir:
+		current_manta_id = get_manta_id(file["title"])
+		if current_manta_id > highest_id:
+			highest_id = current_manta_id
+	last_manta_id = highest_id
+	new_manta_id = last_manta_id + 1
+
+	species_letter, sex_letter = get_species_and_sex_letter(attributes)
 	if new_manta_id < 1000:
 		new_manta_id = "0" + str(new_manta_id)
 	else:
@@ -59,14 +99,22 @@ def save_image_new_dir(file, folder_id, folder_name, drive):
 	new_file.SetContentFile(file)
 	new_file.Upload()
 
-def save_image(file, drive, match_file, database_folder):
-	manta_id = match_file['title'].split("-")[1].split(".")[0]
-	print(database_folder)
+def save_image(file, drive, match_file, database_folder, attributes):
+	manta_id = get_manta_id(match_file["title"])
+	if manta_id < 10:
+		manta_id = "000" + str(manta_id)
+	elif manta_id < 100:
+		manta_id = "00" + str(manta_id)
+	elif manta_id < 1000:
+		manta_id = "0" + str(manta_id)
+
 	database_folder = get_folder_id(database_folder, "each", drive)
 	dst_folder_id = get_folder_id(database_folder, manta_id, drive)
 	
-	# Get correct file_name
-	file_name = match_file['title'] + "1"
+	species_letter, sex_letter = get_species_and_sex_letter(attributes)
+
+	manta_name = match_file['title'].split("- ")[-1].split(".")[0]
+	file_name = "MR-" + manta_id + species_letter + sex_letter + "." + format_date(attributes[3]) + "." + attributes[4] + "-" + manta_name
 	new_file = drive.CreateFile({"title": file_name + ".jpg", "mimeType": "image/jpeg", "parents": [{"kind": "drive#fileLink", "id": dst_folder_id}]})
 	new_file.SetContentFile(file)
 	new_file.Upload()
