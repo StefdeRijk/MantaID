@@ -71,7 +71,23 @@ def get_resized_image(reference_image, frame, file, widget_width, widget_height)
     new_reference_image = Image.open(file)
     resized_reference_image = new_reference_image.resize((new_width, new_height), Image.ANTIALIAS)
     return (resized_reference_image)
-    
+
+def correct_date_format(string):
+    if string[2] != '-' or string[5] != '-':
+        return 0
+    day = ""
+    day = string[0:2]
+    if (int(day) > 31 and int(day) > 0) or not day.isnumeric():
+        return 0
+    month = ""
+    month = string[3:5]
+    if (int(month) > 12 and int(month) > 0)  or not month.isnumeric():
+        return 0
+    year = ""
+    year = string[6:8]
+    if int(year) > 0 or not year.isnumeric():
+        return 0
+    return 1
 
 def show_page(page):
     page.place(relx=0, rely=0, relwidth=1, relheight=1)
@@ -186,7 +202,7 @@ class home_page:
                 home_page(root)
 
 class large_img_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file, manta_name, attributes, matches, previous_page):
         self.frame = Frame()
         show_background()
 
@@ -206,7 +222,7 @@ class large_img_page:
         back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def back_button_function(master, file, attributes):
-            PreviousPage = selection_page(master, file, manta_name, attributes, matches)
+            PreviousPage = previous_page(master, file, manta_name, attributes, matches)
             show_page(PreviousPage.frame)
         
         #large image
@@ -253,7 +269,7 @@ class selection_page:
             show_page(ProcessPage.frame)
 
         def show_full_img_button_function():
-            LargeImgPage = large_img_page(master, file, manta_name, self.attributes, matches)
+            LargeImgPage = large_img_page(master, file, manta_name, self.attributes, matches, selection_page)
             show_page(LargeImgPage.frame)
 
         #reference image
@@ -267,27 +283,12 @@ class selection_page:
         self.show_full_img_button = tk.Button(root, text="Show large image", command=lambda:show_full_img_button_function(), font=("Raleway", 16), bg="#006699", fg="white", height=3, width=16)
         self.show_full_img_button.place(relx=0.175, rely=0.225, relwidth=0.3, relheight=0.04)
 
-        def correct_date_format(string):
-            if string[2] != '-' or string[5] != '-':
-                return 0
-            day = ""
-            day = string[0:1]
-            if int(day) > 31 or not day.isnumeric():
-                return 0
-            month = ""
-            month = string[3:4]
-            if int(month) > 12 or not month.isnumeric():
-                return 0
-            year = ""
-            year = string[6:7]
-            if not year.isnumeric():
-                return 0
-            return 1
-
         def select_attributes(index, box, button):
             if index == 3 and not correct_date_format(box.get()):
                 self.date_button_text.set("Wrong date format: DD-MM-YY")
-                return 
+                return
+            else:
+                self.date_button_text.set("Enter date of sighting below: DD-MM-YY")
             if index < 3:
                 self.attributes[index] = box.get(ANCHOR)
             else:
@@ -324,7 +325,7 @@ class selection_page:
 
         #date entry_box
         self.date_button_text = tk.StringVar()
-        self.date_button_text.set("Enter date below: DD-MM-YY")
+        self.date_button_text.set("Enter date of sighting below: DD-MM-YY")
         self.date_button = tk.Button(master, text="Set date", command=lambda:select_attributes(3, self.date_entry_box, self.date_button), font=("Raleway", 16), bg="#006699", fg="white")
         self.date_button.place(relx=0.175, rely=0.475, relwidth=0.3, relheight=0.04)
         self.date_label = tk.Label(master, textvariable=self.date_button_text, font=("Raleway", 16), bg="#264b77", fg="white")
@@ -497,22 +498,28 @@ class new_manta_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.25, 0.575)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.25, 0.55)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
-        self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
+        self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#3c5b74")
         self.reference_small_label.image = self.resized_reference_image
-        self.reference_small_label.place(relx=0.075, rely=0.1, relwidth=0.25, relheight=0.575)
+        self.reference_small_label.place(relx=0.075, rely=0.05, relwidth=0.25, relheight=0.575)
+        self.show_full_img_button = tk.Button(root, text="Show large image", command=lambda:show_full_img_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.show_full_img_button.place(relx=0.075, rely=0.65, relwidth=0.25, relheight=0.1)
+
+        def show_full_img_button_function():
+            LargeImgPage = large_img_page(master, file, manta_name, attributes, matches, new_manta_page)
+            show_page(LargeImgPage.frame)
 
         self.manta_name_button_text = tk.StringVar()
         self.set_manta_name_button = tk.Button(master, text="Set manta name", command=lambda:set_manta_name_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
-        self.set_manta_name_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
+        self.set_manta_name_button.place(relx=0.75, rely=0.05, relwidth=0.125, relheight=0.125)
         self.set_manta_name_label = tk.Label(master, text="Name: " + self.manta_name, font=("Raleway", 16), bg="#3c5b74", fg="white")
-        self.set_manta_name_label.place(relx=0.35, rely=0.1, relwidth=0.175, relheight=0.125)
+        self.set_manta_name_label.place(relx=0.35, rely=0.05, relwidth=0.175, relheight=0.125)
         self.set_manta_name_instruction_label = tk.Label(master, textvariable=self.manta_name_button_text, font=("Raleway", 16), bg="#006699", fg="white")
         self.manta_name_button_text.set("Insert new manta name below")
-        self.set_manta_name_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
+        self.set_manta_name_instruction_label.place(relx=0.55, rely=0.05, relwidth=0.175, relheight=0.0325)
         self.set_manta_name_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
-        self.set_manta_name_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
+        self.set_manta_name_entry_box.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.075)
 
         def set_manta_name_button_function(master, file, attributes):
             global root_folder_id
@@ -529,52 +536,51 @@ class new_manta_page:
                 else:
                     self.manta_name_button_text.set("Name must be unique")
         
-        self.set_manta_species_button = tk.Button(master, text="Set manta species", command=lambda:set_manta_species_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
-        self.set_manta_species_button.place(relx=0.75, rely=0.25, relwidth=0.125, relheight=0.125)
-        self.set_manta_species_label = tk.Label(master, text="Species: " + attributes[0], font=("Raleway", 16), bg="#3c5b74", fg="white")
-        self.set_manta_species_label.place(relx=0.35, rely=0.25, relwidth=0.175, relheight=0.125)
-        self.set_manta_species_instruction_label = tk.Label(master, text="Change manta species below", font=("Raleway", 16), bg="#006699", fg="white")
-        self.set_manta_species_instruction_label.place(relx=0.55, rely=0.25, relwidth=0.175, relheight=0.0325)
-        self.set_manta_species_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
-        self.set_manta_species_listbox.place(relx=0.55, rely=0.3, relwidth=0.175, relheight=0.075)
-        self.set_manta_species_listbox.insert(0, "Reef manta")
-        self.set_manta_species_listbox.insert(1, "Oceanic manta")
-        self.set_manta_species_listbox.insert(2, "Unknown")
+        self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:set_dive_site_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_dive_site_button.place(relx=0.75, rely=0.2, relwidth=0.125, relheight=0.125)
+        self.set_dive_site_label = tk.Label(master, text="Dive site: " + attributes[4], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_dive_site_label.place(relx=0.35, rely=0.2, relwidth=0.175, relheight=0.125)
+        self.set_dive_site_instruction_label = tk.Label(master, text="Enter dive site below", font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_dive_site_instruction_label.place(relx=0.55, rely=0.2, relwidth=0.175, relheight=0.0325)
+        self.set_dive_site_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
+        self.set_dive_site_entry_box.place(relx=0.55, rely=0.25, relwidth=0.175, relheight=0.075)
 
-        def set_manta_species_button_function(attributes):
-            new_species = self.set_manta_species_listbox.get(ANCHOR)
-            if new_species:
-                attributes[0] = new_species
+        def set_dive_site_button_function(attributes):
+            new_dive_site = self.set_dive_site_entry_box.get()
+            if new_dive_site:
+                attributes[4] = new_dive_site
                 NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
 
-        self.set_manta_colour_button = tk.Button(master, text="Set manta colour", command=lambda:set_manta_colour_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
-        self.set_manta_colour_button.place(relx=0.75, rely=0.4, relwidth=0.125, relheight=0.125)
-        self.set_manta_colour_label = tk.Label(master, text="Colour: " + attributes[1], font=("Raleway", 16), bg="#3c5b74", fg="white")
-        self.set_manta_colour_label.place(relx=0.35, rely=0.4, relwidth=0.175, relheight=0.125)
-        self.set_manta_colour_instruction_label = tk.Label(master, text="Change manta colour below", font=("Raleway", 16), bg="#006699", fg="white")
-        self.set_manta_colour_instruction_label.place(relx=0.55, rely=0.4, relwidth=0.175, relheight=0.0325)
-        self.set_manta_colour_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
-        self.set_manta_colour_listbox.place(relx=0.55, rely=0.45, relwidth=0.175, relheight=0.075)
-        self.set_manta_colour_listbox.insert(0, "Black")
-        self.set_manta_colour_listbox.insert(1, "White")
-        self.set_manta_colour_listbox.insert(2, "Unknown")
+        self.date_button_text = tk.StringVar()
+        self.date_button_text.set("Change date of sighting below")
+        self.set_date_button = tk.Button(master, text="Set date", command=lambda:set_date_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.set_date_button.place(relx=0.75, rely=0.35, relwidth=0.125, relheight=0.125)
+        self.set_date_label = tk.Label(master, text="Date: " + attributes[3], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.set_date_label.place(relx=0.35, rely=0.35, relwidth=0.175, relheight=0.125)
+        self.set_date_instruction_label = tk.Label(master, textvariable=self.date_button_text, font=("Raleway", 16), bg="#006699", fg="white")
+        self.set_date_instruction_label.place(relx=0.55, rely=0.35, relwidth=0.175, relheight=0.0325)
+        self.set_date_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
+        self.set_date_entry_box.place(relx=0.55, rely=0.4, relwidth=0.175, relheight=0.075)
 
-        def set_manta_colour_button_function(attributes):
-            new_colour = self.set_manta_colour_listbox.get(ANCHOR)
-            if new_colour:
-                attributes[1] = new_colour
+        def set_date_button_function(attributes):
+            if not correct_date_format(self.set_date_entry_box.get()):
+                self.date_button_text.set("Wrong date format: DD-MM-YY")
+                return 
+            new_date = self.set_date_entry_box.get()
+            if new_date:
+                attributes[3] = new_date
                 NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
 
         self.set_manta_gender_button = tk.Button(master, text="Set manta gender", command=lambda:set_manta_gender_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
-        self.set_manta_gender_button.place(relx=0.75, rely=0.55, relwidth=0.125, relheight=0.125)
+        self.set_manta_gender_button.place(relx=0.75, rely=0.5, relwidth=0.125, relheight=0.125)
         self.set_manta_gender_label = tk.Label(master, text="Gender: " + attributes[2], font=("Raleway", 16), bg="#3c5b74", fg="white")
-        self.set_manta_gender_label.place(relx=0.35, rely=0.55, relwidth=0.175, relheight=0.125)
+        self.set_manta_gender_label.place(relx=0.35, rely=0.5, relwidth=0.175, relheight=0.125)
         self.set_manta_gender_instruction_label = tk.Label(master, text="Change manta gender below", font=("Raleway", 16), bg="#006699", fg="white")
-        self.set_manta_gender_instruction_label.place(relx=0.55, rely=0.55, relwidth=0.175, relheight=0.0325)
+        self.set_manta_gender_instruction_label.place(relx=0.55, rely=0.5, relwidth=0.175, relheight=0.0325)
         self.set_manta_gender_listbox = tk.Listbox(master, font=("Raleway", 14), bg="#006699", fg="White", justify="center", highlightbackground="Black")
-        self.set_manta_gender_listbox.place(relx=0.55, rely=0.6, relwidth=0.175, relheight=0.075)
+        self.set_manta_gender_listbox.place(relx=0.55, rely=0.55, relwidth=0.175, relheight=0.075)
         self.set_manta_gender_listbox.insert(0, "Male")
         self.set_manta_gender_listbox.insert(1, "Female")
         self.set_manta_gender_listbox.insert(2, "Unknown")
@@ -585,6 +591,12 @@ class new_manta_page:
                 attributes[2] = new_gender
                 NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                 show_page(NewMantaPage.frame)
+        
+        self.manta_species_label = tk.Label(master, text="Species: " + attributes[0], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.manta_species_label.place(relx=0.35, rely=0.65, relwidth=0.25, relheight=0.1)
+
+        self.manta_colour_label = tk.Label(master, text="Colour: " + attributes[1], font=("Raleway", 16), bg="#3c5b74", fg="white")
+        self.manta_colour_label.place(relx=0.625, rely=0.65, relwidth=0.25, relheight=0.1)
 
 class save_page:
      def __init__(self, master, file, manta_name, attributes, matches, match_index):
