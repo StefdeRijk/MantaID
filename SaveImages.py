@@ -1,6 +1,3 @@
-from multiprocessing import managers
-
-
 def	get_folder_id(root_dir, target_dir_title, drive):
 	fileList = drive.ListFile({'q': "'" + root_dir + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
 	for file in fileList:
@@ -65,6 +62,19 @@ def get_species_and_sex_letter(attributes):
 		sex_letter = ".U"
 	return species_letter, sex_letter
 
+def new_name_unique(new_name, drive, database_folder):
+	if "name" in new_name or "Name" in new_name:
+		return 1
+	
+	database_folder = get_folder_id(database_folder, "Folders for each individual", drive)
+	
+	NewFileList = drive.ListFile({'q': "'" + database_folder + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
+	for files in NewFileList:
+		manta_name = files['title'].split("- ")[-1].split(".")[0]
+		if new_name.strip() == manta_name:
+			return 0
+	return 1
+
 def create_new_dir(manta_name, attributes, database_folder, drive):
 	alfredi_dir, birostris_dir = get_folders_for_all_mantas(drive)
 	highest_id = -1
@@ -94,13 +104,24 @@ def create_new_dir(manta_name, attributes, database_folder, drive):
 	return folder_id, folder_name
 
 def save_image_new_dir(file, folder_id, folder_name, drive):
-	# Add dive site to folder name
 	new_file = drive.CreateFile({"title": folder_name + ".jpg", "mimeType": "image/jpeg", "parents": [{"kind": "drive#fileLink", "id": folder_id}]})
 	new_file.SetContentFile(file)
 	new_file.Upload()
 
-def save_image(file, drive, match_file, database_folder, attributes):
-	manta_id = get_manta_id(match_file["title"])
+def save_multiple_images_in_match_folder(file, drive, match_file_name, database_folder, attributes, file_list, manta_name):
+	manta_name += " a"
+	save_image_in_match_folder(file, drive, match_file_name, database_folder, attributes, manta_name)
+	i = 0
+	old_attachment = " a"
+	for cur_file in file_list:
+		attached_letter = " " + chr(ord('b') + i)
+		manta_name = manta_name.replace(old_attachment, attached_letter)
+		save_image_in_match_folder(cur_file, drive, match_file_name, database_folder, attributes, manta_name)
+		i += 1
+		old_attachment = attached_letter
+
+def save_image_in_match_folder(file, drive, match_file_name, database_folder, attributes, manta_name):
+	manta_id = get_manta_id(match_file_name)
 	if manta_id < 10:
 		manta_id = "000" + str(manta_id)
 	elif manta_id < 100:
@@ -113,32 +134,42 @@ def save_image(file, drive, match_file, database_folder, attributes):
 	
 	species_letter, sex_letter = get_species_and_sex_letter(attributes)
 
-	manta_name = match_file['title'].split("- ")[-1].split(".")[0]
 	file_name = "MR-" + manta_id + species_letter + sex_letter + "." + format_date(attributes[3]) + "." + attributes[4] + "-" + manta_name
 	new_file = drive.CreateFile({"title": file_name + ".jpg", "mimeType": "image/jpeg", "parents": [{"kind": "drive#fileLink", "id": dst_folder_id}]})
 	new_file.SetContentFile(file)
 	new_file.Upload()
 
-def new_name_unique(new_name, drive, database_folder):
-	if "name" in new_name or "Name" in new_name:
-		return 1
-	
-	database_folder = get_folder_id(database_folder, "Folders for each individual", drive)
-	
-	NewFileList = drive.ListFile({'q': "'" + database_folder + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()
+def save_image_in_master_folder(file, drive, match_file_name, database_folder, attributes):
+	folder_id = get_folder_id(database_folder, "MASTER", drive)
+	manta_id = get_manta_id(match_file_name)
+
+	NewFileList = drive.ListFile({'q': "'" + folder_id + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
 	for files in NewFileList:
-		manta_name = files['title'].split("- ")[-1].split(".")[0]
-		if new_name.strip() == manta_name:
-			return 0
-	return 1
+		if "Unconfirmed" in files['title']:
+			continue
+		ref_manta_id = get_manta_id(files['title'])
+		if manta_id == ref_manta_id:
+			files.Delete()
+			print("deleted")
+			print(files['title'])
+
+	if manta_id < 10:
+		manta_id = "000" + str(manta_id)
+	elif manta_id < 100:
+		manta_id = "00" + str(manta_id)
+	elif manta_id < 1000:
+		manta_id = "0" + str(manta_id)
+
+	species_letter, sex_letter = get_species_and_sex_letter(attributes)
+	manta_name = match_file_name.split("- ")[-1].split(".")[0]
+	manta_name = "MR-" + str(manta_id) + species_letter + sex_letter + " - " + manta_name
+	save_image_new_dir(file, folder_id, manta_name, drive)
 
 def save_new_manta(manta_name, attributes, database_folder, file, drive):
 	folder_id, folder_name = create_new_dir(manta_name, attributes, database_folder, drive)
 
 	#safed in new folder
-	save_image_new_dir(file, folder_id, folder_name, drive)
-
-	print(attributes)
+	save_image_in_match_folder(file, drive, folder_name, database_folder, attributes)
 
 	#safe in color folder
 	if "Reef" in attributes[0] and "Black" in attributes[1]:

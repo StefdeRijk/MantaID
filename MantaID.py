@@ -3,7 +3,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from IterateDatabase import go_through_database
-from SaveImages import save_new_manta, save_image, new_name_unique, get_folder_id
+from SaveImages import *
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
@@ -193,13 +193,14 @@ class home_page:
 
         def open_files(file):
             self.open_button_text.set("Loading...")
-            files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.png; *.jpg; *.jpeg; *.JPG")])
+            files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.jpg; *.jpeg; *.JPG")])
             if files:
                 file = files.name
                 SelectionPage = selection_page(master, file, manta_name, attributes, matches)
                 show_page(SelectionPage.frame)
             else :
-                home_page(root)
+                self.open_button_text.set("Open image")
+                home_page(master, file, manta_name, attributes, matches)
 
 class large_img_page:
     def __init__(self, master, file, manta_name, attributes, matches, previous_page):
@@ -401,10 +402,10 @@ class process_page:
         set_button_state()
 
         #save button
-        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
 
-        def save_button_function(file, drive):
+        def save_button_function(file):
             SavePage = save_page(master, file, "", attributes, self.matches, self.match_index)
             show_page(SavePage.frame)
 
@@ -600,29 +601,62 @@ class new_manta_page:
 
 class save_page:
      def __init__(self, master, file, manta_name, attributes, matches, match_index):
-            self.frame = Frame()
-            show_background()
+        self.frame = Frame()
+        show_background()
 
-            #settings_button
-            settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-            settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
-            #retry button
-            self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
-            self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        #retry button
+        self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-            def cancel_button_function():
-                HomePage = home_page(master, file, manta_name, attributes, matches)
-                show_page(HomePage.frame)
-            
-            #save button
-            self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-            self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+        def cancel_button_function():
+            HomePage = home_page(master, file, manta_name, attributes, matches)
+            show_page(HomePage.frame)
+        
+        #save button
+        self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
 
-            def save_button_function(file, drive):
-                global root_folder_id
-                save_image(file, drive, matches[match_index][1], root_folder_id, attributes)
+        def save_button_function(file, drive):
+            global root_folder_id
+            save_image_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, matches[match_index][2])
+            cancel_button_function()
+        
+        #save button
+        self.save_as_master_button = tk.Button(master, text="Save image as master", command=lambda:save_as_master_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.save_as_master_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
+
+        def save_as_master_button_function(file, drive):
+            global root_folder_id
+            save_image_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, matches[match_index][2])
+            save_image_in_master_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes)
+            cancel_button_function()
+        
+        self.safe_multiple_files_button_text = tk.StringVar()
+        self.safe_multiple_files_button_text.set("Save multiple files")
+        self.safe_multiple_files_button = tk.Button(master, textvariable=self.safe_multiple_files_button_text, command=lambda:safe_multiple_files_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.safe_multiple_files_button.place(relx=0.4375, rely=0.075, relwidth=0.125, relheight=0.05)
+
+        def safe_multiple_files_button_function():
+            self.safe_multiple_files_button_text.set("Loading...")
+            files = filedialog.askopenfilenames(parent=master, title="Choose files", filetypes=[("Images", "*.jpg; *.jpeg; *.JPG")])
+            if files:
+                file_list = list(files)
+                save_multiple_images_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, file_list, matches[match_index][2])
                 cancel_button_function()
+        self.safe_multiple_files_button_text.set("Save multiple files")
+
+        #reference image
+        self.reference_image = Image.open(file)
+        self.reference_image=ImageTk.PhotoImage(self.reference_image)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
+        self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
+        self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
+        self.reference_label.image = self.resized_reference_image
+        self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
 
 class show_match_image:
     def __init__(self, master, matches, i):
