@@ -616,9 +616,17 @@ class save_page:
             HomePage = home_page(master, file, manta_name, attributes, matches)
             show_page(HomePage.frame)
         
+        #back button
+        self.back_button = tk.Button(master, text="Cancel", command=lambda:back_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def back_button_function():
+            HomePage = process_page(master, file, manta_name, attributes, matches)
+            show_page(HomePage.frame)
+        
         #save button
         self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+        self.save_button.place(relx=0.675, rely=0.35, relwidth=0.125, relheight=0.125)
 
         def save_button_function(file, drive):
             global root_folder_id
@@ -626,19 +634,19 @@ class save_page:
             cancel_button_function()
         
         #save button
-        self.save_as_master_button = tk.Button(master, text="Save image as master", command=lambda:save_as_master_button_function(file, drive), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.save_as_master_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
+        self.save_as_master_button = tk.Button(master, text="Save image as master", command=lambda:save_as_master_button_function(file, drive), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.save_as_master_button.place(relx=0.675, rely=0.075, relwidth=0.125, relheight=0.125)
 
         def save_as_master_button_function(file, drive):
             global root_folder_id
-            save_image_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, matches[match_index][2])
+            self.save_as_master_button["state"] = "disabled"
             save_image_in_master_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes)
-            cancel_button_function()
+            save_page(master, file, manta_name, attributes, matches, match_index)
         
         self.safe_multiple_files_button_text = tk.StringVar()
         self.safe_multiple_files_button_text.set("Save multiple files")
         self.safe_multiple_files_button = tk.Button(master, textvariable=self.safe_multiple_files_button_text, command=lambda:safe_multiple_files_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.safe_multiple_files_button.place(relx=0.4375, rely=0.075, relwidth=0.125, relheight=0.05)
+        self.safe_multiple_files_button.place(relx=0.675, rely=0.55, relwidth=0.125, relheight=0.125)
 
         def safe_multiple_files_button_function():
             self.safe_multiple_files_button_text.set("Loading...")
@@ -652,11 +660,11 @@ class save_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
+        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.575, 0.725)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
-        self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
+        self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.575, relheight=0.725)
 
 class show_match_image:
     def __init__(self, master, matches, i):

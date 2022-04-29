@@ -145,8 +145,6 @@ def save_image_in_master_folder(file, drive, match_file_name, database_folder, a
 
 	NewFileList = drive.ListFile({'q': "'" + folder_id + "' in parents and trashed=false and mimeType='image/jpeg'"}).GetList()
 	for files in NewFileList:
-		if "Unconfirmed" in files['title']:
-			continue
 		ref_manta_id = get_manta_id(files['title'])
 		if manta_id == ref_manta_id:
 			files.Delete()
