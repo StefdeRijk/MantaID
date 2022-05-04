@@ -266,7 +266,7 @@ class selection_page:
             elif "Reef" in self.attributes[0]:
                 root_folder_id = get_folder_id(root_folder_id, "alfredi", drive)
             matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
-            ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
+            ProcessPage = orientation_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
         def show_full_img_button_function():
@@ -341,6 +341,54 @@ class selection_page:
         self.set_dive_site_label.place(relx=0.175, rely=0.55, relwidth=0.3, relheight=0.07)
         self.set_dive_site_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#264b77", fg="white", justify="center", highlightbackground="Black", highlightthickness=1)
         self.set_dive_site_entry_box.place(relx=0.175, rely=0.63, relwidth=0.3, relheight=0.07)
+
+class orientation_page:
+    def __init__(self, master, file, manta_name, attributes, matches):
+        self.frame = Frame()
+        show_background()
+
+        self.pressed = 0
+        self.old_x = None
+        self.old_y = None
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #cancel button
+        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function():
+            HomePage = home_page(master, file, manta_name, attributes, matches)
+            show_page(HomePage.frame)
+        
+        process_button = tk.Button(master, text="Process", command=lambda:process_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def process_button_function(master, file, attributes):
+            PreviousPage = process_page(master, file, manta_name, attributes, matches)
+            show_page(PreviousPage.frame)
+
+        #large image
+        self.large_image = Image.open(file)
+        self.large_image=ImageTk.PhotoImage(self.large_image)
+        self.resized_large_image = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
+        self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
+        self.canvas = Canvas(master, bg="#264b77")
+        self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.resized_large_image, anchor=N)
+        self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
+        self.canvas.bind('<Button-1>', self.draw_direction)
+        
+    def draw_direction(self, event):
+        self.pressed += 1
+        print(self.pressed)
+        if self.pressed == 1:
+            self.old_x = event.x
+            self.old_y = event.y
+        if self.pressed == 2:
+            self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
+            self.pressed = 0
 
 class process_page:
     def __init__(self, master, file, manta_name, attributes, matches):
