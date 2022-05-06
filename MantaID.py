@@ -6,6 +6,8 @@ from IterateDatabase import go_through_database
 from SaveImages import *
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
+from MathUtils import get_angle
+from time import sleep
 
 settings_file = open("settings.txt", "r")
 
@@ -345,6 +347,8 @@ class selection_page:
 class orientation_page:
     def __init__(self, master, file, manta_name, attributes, matches):
         self.frame = Frame()
+        self.master = master
+        self.file = file
         show_background()
 
         self.pressed = 0
@@ -382,12 +386,20 @@ class orientation_page:
         
     def draw_direction(self, event):
         self.pressed += 1
-        print(self.pressed)
         if self.pressed == 1:
             self.old_x = event.x
             self.old_y = event.y
         if self.pressed == 2:
             self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
+            angle = get_angle(self.old_x, self.old_y, event.x, event.y)
+            large_image = Image.open(self.file)
+            large_image=ImageTk.PhotoImage(large_image)
+            resized_large_image = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
+            rot_image = ImageTk.PhotoImage(resized_large_image.rotate(angle))
+            self.canvas.delete(self.resized_large_image)
+            self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=rot_image, anchor=N)
+            self.canvas.update()
+            sleep(10000)
             self.pressed = 0
 
 class process_page:
