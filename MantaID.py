@@ -7,7 +7,7 @@ from SaveImages import *
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from MathUtils import get_angle
-from time import sleep
+from Preprocessing import preprocess_image
 
 settings_file = open("settings.txt", "r")
 
@@ -72,9 +72,11 @@ def get_resized_image(reference_image, frame, file, widget_width, widget_height)
         new_width = int(new_height * aspect_ratio_img)
     new_reference_image = Image.open(file)
     resized_reference_image = new_reference_image.resize((new_width, new_height), Image.ANTIALIAS)
-    return (resized_reference_image)
+    return resized_reference_image, new_width, new_height
 
 def correct_date_format(string):
+    if len(string) > 8:
+        return 0
     if string[2] != '-' or string[5] != '-':
         return 0
     day = ""
@@ -198,7 +200,8 @@ class home_page:
             files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.jpg; *.jpeg; *.JPG")])
             if files:
                 file = files.name
-                SelectionPage = selection_page(master, file, manta_name, attributes, matches)
+                SelectionPage = orientation_page(master, file, manta_name, attributes, matches)
+                # SelectionPage = selection_page(master, file, manta_name, attributes, matches)
                 show_page(SelectionPage.frame)
             else :
                 self.open_button_text.set("Open image")
@@ -267,8 +270,9 @@ class selection_page:
                 root_folder_id = get_folder_id(root_folder_id, "birostris", drive)
             elif "Reef" in self.attributes[0]:
                 root_folder_id = get_folder_id(root_folder_id, "alfredi", drive)
-            matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
+            # matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
             ProcessPage = orientation_page(master, file, manta_name, self.attributes, matches)
+            # ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
             show_page(ProcessPage.frame)
 
         def show_full_img_button_function():
@@ -349,6 +353,70 @@ class orientation_page:
         self.frame = Frame()
         self.master = master
         self.file = file
+        self.rot_image = Image.open(self.file)
+        self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
+        show_background()
+
+        self.pressed = 0
+        self.old_x = None
+        self.old_y = None
+
+        #settings_button
+        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
+        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #cancel button
+        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def cancel_button_function():
+            HomePage = home_page(master, file, manta_name, attributes, matches)
+            show_page(HomePage.frame)
+        
+        process_button = tk.Button(master, text="Rotate", command=lambda:process_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
+        def process_button_function(master, file, attributes):
+            CropPage = crop_page(master, file, manta_name, attributes, matches, self.rot_image, self.image_width, self.image_height)
+            show_page(CropPage.frame)
+
+        #large image
+        self.large_image = Image.open(file)
+        self.large_image=ImageTk.PhotoImage(self.large_image)
+        self.resized_large_image, self.image_width, self.image_height = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
+        self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
+        self.canvas = Canvas(master, bg="#264b77")
+        self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.resized_large_image, anchor=N)
+        self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
+        self.canvas.bind('<Button-1>', self.draw_direction)
+        
+    def draw_direction(self, event):
+        self.pressed += 1
+        if self.pressed == 1:
+            self.old_x = event.x
+            self.old_y = event.y
+        if self.pressed == 2:
+            self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
+            angle = get_angle(self.old_x, self.old_y, event.x, event.y)
+            large_image = Image.open(self.file)
+            large_image=ImageTk.PhotoImage(large_image)
+            resized_large_image, self.image_width, self.image_height = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
+            self.rot_image = resized_large_image.rotate(angle)
+            self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
+            self.canvas.delete(self.resized_large_image)
+            self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
+            self.canvas.update()
+            self.pressed = 0
+
+class crop_page:
+    def __init__(self, master, file, manta_name, attributes, matches, rot_image, image_width, image_height):
+        self.frame = Frame()
+        self.master = master
+        self.file = file
+        self.image_width = image_width
+        self.image_height = image_height
+        self.rot_image = rot_image
+        self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
         show_background()
 
         self.pressed = 0
@@ -371,16 +439,13 @@ class orientation_page:
         process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function(master, file, attributes):
+            preprocess_image(self.cropped_image, self.temp_cropped_image.width(), self.temp_cropped_image.height())
             PreviousPage = process_page(master, file, manta_name, attributes, matches)
             show_page(PreviousPage.frame)
 
         #large image
-        self.large_image = Image.open(file)
-        self.large_image=ImageTk.PhotoImage(self.large_image)
-        self.resized_large_image = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
-        self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
         self.canvas = Canvas(master, bg="#264b77")
-        self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.resized_large_image, anchor=N)
+        self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
         self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
         self.canvas.bind('<Button-1>', self.draw_direction)
         
@@ -390,16 +455,14 @@ class orientation_page:
             self.old_x = event.x
             self.old_y = event.y
         if self.pressed == 2:
-            self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
-            angle = get_angle(self.old_x, self.old_y, event.x, event.y)
-            large_image = Image.open(self.file)
-            large_image=ImageTk.PhotoImage(large_image)
-            resized_large_image = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
-            rot_image = ImageTk.PhotoImage(resized_large_image.rotate(angle))
-            self.canvas.delete(self.resized_large_image)
-            self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=rot_image, anchor=N)
-            self.canvas.update()
-            sleep(10000)
+            self.canvas.create_rectangle(self.old_x, self.old_y, event.x, event.y, width=2, outline='#ff2020')
+            if self.image_width < self.frame.winfo_screenwidth() * 0.8:
+                difference = (self.frame.winfo_screenwidth() * 0.8 - self.image_width) / 2
+                self.cropped_image = self.rot_image.crop([self.old_x - difference, self.old_y, event.x - difference, event.y])
+            else:
+                difference = (self.frame.winfo_screenheight() * 0.7 - self.image_height) / 2
+                self.cropped_image = self.rot_image.crop([self.old_x, self.old_y - difference, event.x, event.y - difference])
+            self.temp_cropped_image = ImageTk.PhotoImage(self.cropped_image)
             self.pressed = 0
 
 class process_page:
@@ -596,7 +659,7 @@ class new_manta_page:
                     show_page(NewMantaPage.frame)
                 else:
                     self.manta_name_button_text.set("Name must be unique")
-        
+
         self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:set_dive_site_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         self.set_dive_site_button.place(relx=0.75, rely=0.2, relwidth=0.125, relheight=0.125)
         self.set_dive_site_label = tk.Label(master, text="Dive site: " + attributes[4], font=("Raleway", 16), bg="#3c5b74", fg="white")

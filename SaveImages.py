@@ -167,7 +167,7 @@ def save_new_manta(manta_name, attributes, database_folder, file, drive):
 	folder_id, folder_name = create_new_dir(manta_name, attributes, database_folder, drive)
 
 	#safed in new folder
-	save_image_in_match_folder(file, drive, folder_name, database_folder, attributes)
+	save_image_in_match_folder(file, drive, folder_name, database_folder, attributes, manta_name)
 
 	#safe in color folder
 	if "Reef" in attributes[0] and "Black" in attributes[1]:

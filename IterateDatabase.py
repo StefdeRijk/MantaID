@@ -1,6 +1,6 @@
 from ImageCompare import image_compare
 from SaveImages import get_folder_id
-# import glob
+import glob
 
 def append_file_list(list, file_list, filter1, filter2):
     for file in file_list:
@@ -52,11 +52,11 @@ def go_through_database(file, amount_of_mantas, database_folder, attributes, dri
         print(filess["title"])
         # print(filess)
     print(len(files))
-    for i in range(2): #range(len(files)):
+    for i in range(len(files)):
         current_file = files[i]["title"]
         # current_file = files[i]
         files[i].GetContentFile("temp.jpeg", mimetype="image/jpeg")
-        current_result = 1 #image_compare(file, "temp.jpeg")
+        current_result = image_compare(file, "temp.jpeg")
         current_manta_name = current_file.split("- ")[-1].split(".")[0]
         for j in range(len(matches)):
             if current_result >= matches[j][0]:
