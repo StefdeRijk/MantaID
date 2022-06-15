@@ -56,10 +56,6 @@ def show_background():
     quit_button = tk.Button(root, text="Quit", command=root.quit, font=("Raleway", 16), bg="#00243f", fg="white", height=4, width=16)
     quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
 
-def settings_button_function(master, page, file, manta_name, attributes, matches):
-    SettingsPage = settings_page(master, page, file, manta_name, attributes, matches)
-    show_page(SettingsPage.frame)
-
 def get_resized_image(reference_image, frame, file, widget_width, widget_height):
     aspect_ratio_img = reference_image.width() / reference_image.height()
     frame.update()
@@ -97,91 +93,8 @@ def show_page(page):
     page.place(relx=0, rely=0, relwidth=1, relheight=1)
         
 
-class settings_page:
-    def __init__(self, master, previous_page, file, manta_name, attributes, matches):
-        self.frame = Frame()
-        show_background()
-
-        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page, master, file, manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
-
-        def back_button_function(previous_page, master, file, manta_name, attributes, matches):
-            PreviousPage = previous_page(master, file, manta_name, attributes, matches)
-            show_page(PreviousPage.frame)
-
-        set_matches_button_text = tk.StringVar()
-        set_matches_button = tk.Button(master, text="Set amount of matches", command=lambda:set_matches_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
-        set_matches_button.place(relx=0.75, rely=0.1, relwidth=0.125, relheight=0.125)
-        set_matches_label = tk.Label(master, text="Current amount of matches: " + str(amount_of_mantas), font=("Raleway", 16), bg="#3c5b74", fg="white")
-        set_matches_label.place(relx=0.125, rely=0.1, relwidth=0.4, relheight=0.125)
-        set_matches_instruction_label = tk.Label(master, textvariable=set_matches_button_text, font=("Raleway", 16), bg="#006699", fg="white")
-        set_matches_button_text.set("Insert amount of matches below")
-        set_matches_instruction_label.place(relx=0.55, rely=0.1, relwidth=0.175, relheight=0.0325)
-        set_matches_entry_box = tk.Entry(master, font=("Raleway", 16), bg="#006699", fg="white", justify="center")
-        set_matches_entry_box.place(relx=0.55, rely=0.15, relwidth=0.175, relheight=0.075)
-
-        def set_matches_button_function():
-            global amount_of_mantas
-            entered_value = set_matches_entry_box.get()
-            if entered_value and entered_value.isnumeric():
-                settings_file_read = open("settings.txt", "r")
-                settings_file_data = settings_file_read.read()
-                settings_file_read.close()
-                first_line = settings_file_data.split("\n")[0]
-                replace_value = first_line.split("= ")[-1]
-                settings_file_data = settings_file_data.replace(replace_value, entered_value)
-                settings_file_write = open("settings.txt", "w")
-                settings_file_write.write(settings_file_data)
-                settings_file_write.close()
-                settings_file = open("settings.txt", "r")
-                amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-                settings_file.close()
-            else :
-                set_matches_button_text.set("Please enter a number")
-                return
-            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
-
-        if show_all_mantas == True:
-            show_mantas_bool = "Yes"
-        else :
-            show_mantas_bool = "No"
-        show_all_mantas_button = tk.Button(master, text="Show all mantas", command=lambda:show_all_mantas_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
-        show_all_mantas_button.place(relx=0.75, rely=0.55, relwidth=0.125, relheight=0.125)
-        show_all_mantas_label = tk.Label(master, text="Show all mantas: " + show_mantas_bool, font=("Raleway", 16), bg="#3c5b74", fg="white")
-        show_all_mantas_label.place(relx=0.125, rely=0.55, relwidth=0.4, relheight=0.125)
-        show_all_mantas_listbox = tk.Listbox(master, font=("Raleway", 16), bg="#006699", fg="White", justify="center", highlightbackground="Black")
-        show_all_mantas_listbox.insert(0, "")
-        show_all_mantas_listbox.insert(1, "Yes")
-        show_all_mantas_listbox.insert(2, "No")
-        show_all_mantas_listbox.place(relx=0.55, rely=0.55, relwidth=0.175, relheight=0.125)
-
-        def show_all_mantas_button_function():
-            global show_all_mantas
-            entered_value = show_all_mantas_listbox.get(ANCHOR)
-            if entered_value:
-                if entered_value == "Yes":
-                    entered_value = str(1)
-                else :
-                    entered_value = str(0)
-                settings_file_read = open("settings.txt", "r")
-                settings_file_data = settings_file_read.read()
-                settings_file_read.close()
-                first_line = settings_file_data.split("\n")[3]
-                replace_value = first_line.split("= ")[-1]
-                settings_file_data = settings_file_data.replace(replace_value, entered_value)
-                settings_file_write = open("settings.txt", "w")
-                settings_file_write.write(settings_file_data)
-                settings_file_write.close()
-                settings_file = open("settings.txt", "r")
-                first_line =settings_file.read().split("\n")[3]
-                show_all_mantas = bool(int(first_line.split(" ")[-1]))
-                settings_file.close()
-            else :
-                return
-            settings_button_function(master, previous_page, file, manta_name, attributes, matches)
-
 class home_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master):
         self.frame = Frame()
         show_background()
 
@@ -200,51 +113,46 @@ class home_page:
             files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.jpg; *.jpeg; *.JPG")])
             if files:
                 file = files.name
-                SelectionPage = orientation_page(master, file, manta_name, attributes, matches)
-                # SelectionPage = selection_page(master, file, manta_name, attributes, matches)
+                SelectionPage = selection_page(master, file)
                 show_page(SelectionPage.frame)
             else :
                 self.open_button_text.set("Open image")
-                home_page(master, file, manta_name, attributes, matches)
+                home_page(master)
 
 class large_img_page:
-    def __init__(self, master, file, manta_name, attributes, matches, previous_page):
+    def __init__(self, master, file, previous_page):
         self.frame = Frame()
         show_background()
-
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #cancel button
         self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
         
-        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file), font=("Raleway", 16), bg="#264b77", fg="white")
         back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def back_button_function(master, file, attributes):
-            PreviousPage = previous_page(master, file, manta_name, attributes, matches)
+        def back_button_function(master, file):
+            PreviousPage = previous_page(master, file)
             show_page(PreviousPage.frame)
         
         #large image
         self.large_image = Image.open(file)
         self.large_image=ImageTk.PhotoImage(self.large_image)
-        self.resized_large_image = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
+        self.resized_large_image, new_width, new_height = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
         self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
         self.large_label = tk.Label(master, image=self.resized_large_image, bg="#264b77")
         self.large_label.image = self.resized_large_image
         self.large_label.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
 
 class selection_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file):
         self.frame = Frame()
         self.attributes_number = 0
-        self.attributes = [attributes] * 5 # species - colour - gender - date - dive site
+        self.attributes = [None] * 5 # species - colour - gender - date - dive site
         show_background()
 
         #settings_button
@@ -256,7 +164,7 @@ class selection_page:
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
 
         #process button
@@ -270,19 +178,17 @@ class selection_page:
                 root_folder_id = get_folder_id(root_folder_id, "birostris", drive)
             elif "Reef" in self.attributes[0]:
                 root_folder_id = get_folder_id(root_folder_id, "alfredi", drive)
-            # matches = go_through_database(file, amount_of_mantas, root_folder_id, self.attributes, drive)
-            ProcessPage = orientation_page(master, file, manta_name, self.attributes, matches)
-            # ProcessPage = process_page(master, file, manta_name, self.attributes, matches)
+            ProcessPage = orientation_page(master, file, self.attributes)
             show_page(ProcessPage.frame)
 
         def show_full_img_button_function():
-            LargeImgPage = large_img_page(master, file, manta_name, self.attributes, matches, selection_page)
+            LargeImgPage = large_img_page(master, file, selection_page)
             show_page(LargeImgPage.frame)
 
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.3, 0.15)
+        self.resized_reference_image, new_width, new_height = get_resized_image(self.reference_image, self.frame, file, 0.3, 0.15)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#264b77")
         self.reference_small_label.image = self.resized_reference_image
@@ -349,7 +255,7 @@ class selection_page:
         self.set_dive_site_entry_box.place(relx=0.175, rely=0.63, relwidth=0.3, relheight=0.07)
 
 class orientation_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file, attributes):
         self.frame = Frame()
         self.master = master
         self.file = file
@@ -370,14 +276,14 @@ class orientation_page:
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
         
         process_button = tk.Button(master, text="Rotate", command=lambda:process_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function(master, file, attributes):
-            CropPage = crop_page(master, file, manta_name, attributes, matches, self.rot_image, self.image_width, self.image_height)
+            CropPage = crop_page(master, file, attributes, self.rot_image, self.image_width, self.image_height)
             show_page(CropPage.frame)
 
         #large image
@@ -409,7 +315,7 @@ class orientation_page:
             self.pressed = 0
 
 class crop_page:
-    def __init__(self, master, file, manta_name, attributes, matches, rot_image, image_width, image_height):
+    def __init__(self, master, file, attributes, rot_image, image_width, image_height):
         self.frame = Frame()
         self.master = master
         self.file = file
@@ -432,15 +338,16 @@ class crop_page:
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
         
         process_button = tk.Button(master, text="Process", command=lambda:process_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function(master, file, attributes):
-            preprocess_image(self.cropped_image, self.temp_cropped_image.width(), self.temp_cropped_image.height())
-            PreviousPage = process_page(master, file, manta_name, attributes, matches)
+            processed_image = preprocess_image(self.cropped_image)
+            matches = go_through_database(file, amount_of_mantas, root_folder_id, attributes, master)
+            PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
         #large image
@@ -466,7 +373,7 @@ class crop_page:
             self.pressed = 0
 
 class process_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file, attributes, matches, processed_image):
         global amount_of_mantas
         self.frame = Frame()
         self.matches = matches
@@ -491,7 +398,7 @@ class process_page:
         self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, self.matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
         
         #previous button
@@ -537,7 +444,7 @@ class process_page:
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def new_button_function(master, file, attributes):
-            WarningPage = warning_page(master, file, "", attributes, self.matches)
+            WarningPage = warning_page(master, file, attributes, self.matches, processed_image)
             self.frame.place_forget()
             show_page(WarningPage.frame)
 
@@ -559,14 +466,14 @@ class process_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
+        self.resized_reference_image, new_width, new_height = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
 
 class warning_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file, manta_name, attributes, matches, processed_image):
         self.frame = Frame()
         self.manta_name = manta_name
         show_background()
@@ -579,7 +486,7 @@ class warning_page:
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def back_button_function(master, file, attributes):
-            PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
+            PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
         self.warning_label = tk.Label(master, text="Warning!\n\nPlease ask a project scientist \nto check if the manta \nis a new individual.", font=("Raleway", 46), bg="#bc5334", fg="white")
@@ -615,14 +522,14 @@ class new_manta_page:
 
         def add_manta_button_function():
             save_new_manta(manta_name, attributes, root_folder_id, file, drive)
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             self.frame.place_forget()
             show_page(HomePage.frame)
         
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.25, 0.55)
+        self.resized_reference_image, new_width, new_height = get_resized_image(self.reference_image, self.frame, file, 0.25, 0.55)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_small_label = tk.Label(master, image=self.resized_reference_image, bg="#3c5b74")
         self.reference_small_label.image = self.resized_reference_image
@@ -736,7 +643,7 @@ class save_page:
         self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def cancel_button_function():
-            HomePage = home_page(master, file, manta_name, attributes, matches)
+            HomePage = home_page(master)
             show_page(HomePage.frame)
         
         #back button
@@ -783,7 +690,7 @@ class save_page:
         #reference image
         self.reference_image = Image.open(file)
         self.reference_image=ImageTk.PhotoImage(self.reference_image)
-        self.resized_reference_image = get_resized_image(self.reference_image, self.frame, file, 0.575, 0.725)
+        self.resized_reference_image, new_width, new_height = get_resized_image(self.reference_image, self.frame, file, 0.575, 0.725)
         self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
@@ -811,5 +718,5 @@ class show_match_label:
         self.result_label = tk.Label(master, text=self.result_label_text, font=("Raleway", 16), bg="#b67929", fg="white", height=3, width=16)
         self.result_label.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
 
-HomePage = home_page(root, "", None, None, None)
+HomePage = home_page(root)
 root.mainloop()
