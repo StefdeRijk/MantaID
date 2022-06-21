@@ -168,7 +168,7 @@ class selection_page:
             show_page(HomePage.frame)
 
         #process button
-        self.process_button = tk.Button(master, text="Process", command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.process_button = tk.Button(master, text="Continue", command=lambda:process_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
         self.process_button["state"] = "disabled"
         self.process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
@@ -261,6 +261,8 @@ class orientation_page:
         self.file = file
         self.rot_image = Image.open(self.file)
         self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
+        self.angle = 0
+        self.old_line = None
         show_background()
 
         self.pressed = 0
@@ -279,10 +281,18 @@ class orientation_page:
             HomePage = home_page(master)
             show_page(HomePage.frame)
         
-        process_button = tk.Button(master, text="Rotate", command=lambda:process_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
-        process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        rotate_button = tk.Button(master, text="Rotate", command=lambda:rotate_button_function(master, file, attributes), font=("Raleway", 16), bg="#264b77", fg="white")
+        rotate_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def process_button_function(master, file, attributes):
+        def rotate_button_function(master, file, attributes):
+            large_image = Image.open(self.file)
+            large_image=ImageTk.PhotoImage(large_image)
+            resized_large_image, self.image_width, self.image_height = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
+            self.rot_image = resized_large_image.rotate(self.angle)
+            self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
+            self.canvas.delete(self.resized_large_image)
+            self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
+            self.canvas.update()
             CropPage = crop_page(master, file, attributes, self.rot_image, self.image_width, self.image_height)
             show_page(CropPage.frame)
 
@@ -295,6 +305,7 @@ class orientation_page:
         self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.resized_large_image, anchor=N)
         self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
         self.canvas.bind('<Button-1>', self.draw_direction)
+        self.canvas.bind('<Motion>', self.draw_motion)
         
     def draw_direction(self, event):
         self.pressed += 1
@@ -302,17 +313,15 @@ class orientation_page:
             self.old_x = event.x
             self.old_y = event.y
         if self.pressed == 2:
-            self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
-            angle = get_angle(self.old_x, self.old_y, event.x, event.y)
-            large_image = Image.open(self.file)
-            large_image=ImageTk.PhotoImage(large_image)
-            resized_large_image, self.image_width, self.image_height = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
-            self.rot_image = resized_large_image.rotate(angle)
-            self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
-            self.canvas.delete(self.resized_large_image)
-            self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
-            self.canvas.update()
+            self.canvas.delete(self.old_line)
+            self.old_line = self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
+            self.angle = get_angle(self.old_x, self.old_y, event.x, event.y)
             self.pressed = 0
+        
+    def draw_motion(self, event):
+        if self.pressed == 1:
+            self.canvas.delete(self.old_line)
+            self.old_line = self.canvas.create_line(self.old_x, self.old_y, event.x, event.y, width=3, fill='#ff2020', capstyle=ROUND, smooth=TRUE)
 
 class crop_page:
     def __init__(self, master, file, attributes, rot_image, image_width, image_height):
@@ -323,6 +332,7 @@ class crop_page:
         self.image_height = image_height
         self.rot_image = rot_image
         self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
+        self.old_rectangle = None
         show_background()
 
         self.pressed = 0
@@ -346,7 +356,7 @@ class crop_page:
 
         def process_button_function(master, file, attributes):
             processed_image = preprocess_image(self.cropped_image)
-            matches = go_through_database(file, amount_of_mantas, root_folder_id, attributes, master)
+            matches = go_through_database(file, amount_of_mantas, root_folder_id, attributes, drive, processed_image)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
@@ -355,6 +365,7 @@ class crop_page:
         self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
         self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
         self.canvas.bind('<Button-1>', self.draw_direction)
+        self.canvas.bind('<Motion>', self.draw_motion)
         
     def draw_direction(self, event):
         self.pressed += 1
@@ -362,7 +373,20 @@ class crop_page:
             self.old_x = event.x
             self.old_y = event.y
         if self.pressed == 2:
-            self.canvas.create_rectangle(self.old_x, self.old_y, event.x, event.y, width=2, outline='#ff2020')
+            self.canvas.delete(self.old_rectangle)
+            if self.old_x > event.x:
+                left_x = event.x
+                right_x = self.old_x
+            else:
+                left_x = self.old_x
+                right_x = event.x
+            if self.old_y < event.y:
+                top_y = event.y
+                bottom_y = self.old_y
+            else:
+                top_y = self.old_y
+                bottom_y = event.y
+            self.old_rectangle = self.canvas.create_rectangle(left_x, top_y, right_x, bottom_y, width=2, outline='#ff2020')
             if self.image_width < self.frame.winfo_screenwidth() * 0.8:
                 difference = (self.frame.winfo_screenwidth() * 0.8 - self.image_width) / 2
                 self.cropped_image = self.rot_image.crop([self.old_x - difference, self.old_y, event.x - difference, event.y])
@@ -371,6 +395,11 @@ class crop_page:
                 self.cropped_image = self.rot_image.crop([self.old_x, self.old_y - difference, event.x, event.y - difference])
             self.temp_cropped_image = ImageTk.PhotoImage(self.cropped_image)
             self.pressed = 0
+    
+    def draw_motion(self, event):
+        if self.pressed == 1:
+            self.canvas.delete(self.old_rectangle)
+            self.old_rectangle = self.canvas.create_rectangle(self.old_x, self.old_y, event.x, event.y, width=2, outline='#ff2020')
 
 class process_page:
     def __init__(self, master, file, attributes, matches, processed_image):
@@ -465,9 +494,9 @@ class process_page:
 
         #reference image
         self.reference_image = Image.open(file)
-        self.reference_image=ImageTk.PhotoImage(self.reference_image)
+        self.reference_image = ImageTk.PhotoImage(self.reference_image)
         self.resized_reference_image, new_width, new_height = get_resized_image(self.reference_image, self.frame, file, 0.425, 0.675)
-        self.resized_reference_image=ImageTk.PhotoImage(self.resized_reference_image)
+        self.resized_reference_image = ImageTk.PhotoImage(self.resized_reference_image)
         self.reference_label = tk.Label(master, image=self.resized_reference_image, bg="#006699")
         self.reference_label.image = self.resized_reference_image
         self.reference_label.place(relx=0.05, rely=0.025, relwidth=0.425, relheight=0.675)
@@ -700,11 +729,11 @@ class show_match_image:
     def __init__(self, master, matches, i):
         self.frame = Frame()
         #compare image
-        matches[i][1].GetContentFile("temp_match.jpeg")
-        self.compare_image = Image.open("temp_match.jpeg")
+        # matches[i][1].GetContentFile("temp_match.jpeg")
+        self.compare_image = Image.open(matches[i][1])
         self.compare_image = ImageTk.PhotoImage(self.compare_image)
-        self.resized_compare_image = get_resized_image(self.compare_image, self.frame, "temp_match.jpeg", 0.425, 0.675)
-        self.resized_compare_image=ImageTk.PhotoImage(self.resized_compare_image)
+        self.resized_compare_image, new_width, new_height = get_resized_image(self.compare_image, self.frame, matches[i][1], 0.425, 0.675)
+        self.resized_compare_image = ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
         self.compare_label.image = self.resized_compare_image
         self.compare_label.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
