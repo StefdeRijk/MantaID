@@ -288,7 +288,7 @@ class orientation_page:
             large_image = Image.open(self.file)
             large_image=ImageTk.PhotoImage(large_image)
             resized_large_image, self.image_width, self.image_height = get_resized_image(large_image, self.frame, self.file, 0.8, 0.7)
-            self.rot_image = resized_large_image.rotate(self.angle)
+            self.rot_image = resized_large_image.rotate(self.angle, resample=Image.BICUBIC)
             self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
             self.canvas.delete(self.resized_large_image)
             self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
@@ -729,10 +729,10 @@ class show_match_image:
     def __init__(self, master, matches, i):
         self.frame = Frame()
         #compare image
-        # matches[i][1].GetContentFile("temp_match.jpeg")
-        self.compare_image = Image.open(matches[i][1])
+        self.compare_image = matches[i][1].GetContentFile("temp_match.jpeg")
+        self.compare_image = Image.open("temp_match.jpeg")
         self.compare_image = ImageTk.PhotoImage(self.compare_image)
-        self.resized_compare_image, new_width, new_height = get_resized_image(self.compare_image, self.frame, matches[i][1], 0.425, 0.675)
+        self.resized_compare_image, new_width, new_height = get_resized_image(self.compare_image, self.frame, "temp_match.jpeg", 0.425, 0.675)
         self.resized_compare_image = ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
         self.compare_label.image = self.resized_compare_image
