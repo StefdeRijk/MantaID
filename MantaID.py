@@ -202,13 +202,14 @@ class selection_page:
                 self.attributes[index] = box.get(ANCHOR)
             else:
                 self.attributes[index] = box.get()
+            box.bindtags((box, master, "all"))
             button["state"] = DISABLED
             self.attributes_number += 1
             if self.attributes_number == 5:
                 self.process_button["state"] = NORMAL
 
         #species listbox
-        self.species_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.species_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10, exportselection=False)
         self.species_listbox.place(relx=0.525, rely=0.05, relwidth=0.3, relheight=0.15)
         self.species_listbox.insert(0, "Reef manta")
         self.species_listbox.insert(1, "Oceanic manta")
@@ -216,7 +217,7 @@ class selection_page:
         self.species_select_button.place(relx=0.525, rely=0.225, relwidth=0.3, relheight=0.04)
 
         #colour listbox
-        self.colour_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.colour_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10, exportselection=False)
         self.colour_listbox.place(relx=0.525, rely=0.3, relwidth=0.3, relheight=0.15)
         self.colour_listbox.insert(0, "Black")
         self.colour_listbox.insert(1, "White")
@@ -224,7 +225,7 @@ class selection_page:
         self.colour_select_button.place(relx=0.525, rely=0.475, relwidth=0.3, relheight=0.04)
 
         #gender listbox
-        self.gender_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10)
+        self.gender_listbox = tk.Listbox(master, bg="#264b77", font=("Raleway", 16), fg="white", width=10, exportselection=False)
         self.gender_listbox.place(relx=0.525, rely=0.55, relwidth=0.3, relheight=0.15)
         self.gender_listbox.insert(0, "Male")
         self.gender_listbox.insert(1, "Female")
