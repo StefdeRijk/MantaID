@@ -40,34 +40,25 @@ def get_drive_file(database_file, drive_folder, drive):
         if get_manta_id(file['title']) == get_manta_id(database_file):
             return file
 
-def go_through_database(file, amount_of_mantas, database_folder, attributes, drive, preprocessed_image):
+def go_through_database(file, database_folder, attributes, drive, preprocessed_image):
     sift = cv2.xfeatures2d.SIFT_create()
-
     file = cv2.imread(file)
     keypoints_file, descriptors_file = sift.detectAndCompute(file, None)
+
     #index 0 = percentage similar, index 1 = file (drive object), index 2 = name of manta
     matches = []
-    for i in range(amount_of_mantas):
-        temp = [0, "", ""]
-        matches.append(temp)
     files = glob.glob('C:\\Users\\seder\\Desktop\\MantaID\\Database\\*.jpg') #TODO make this a setting
     files = get_files(attributes, files)
+
     print(len(files))
+
     for i in range(len(files)):
         current_file = files[i]
         current_result = image_compare(descriptors_file, current_file)
         current_manta_name = current_file.split("- ")[-1].split(".")[0]
-        for j in range(len(matches)):
-            if current_result >= matches[j][0]:
-                temp = []
-                temp.append(current_result)
-                drive_file = get_drive_file(files[i], database_folder, drive)
-                temp.append(drive_file)
-                temp.append(current_manta_name)
-                matches.insert(j, temp)
-                del matches[-1:]      
-                break  
+        drive_file = get_drive_file(files[i], database_folder, drive)
+        matches.append([current_result, drive_file, current_manta_name])
         print(i)
-    # print(matches[0])
-    # print(matches[1])
+
+    matches.sort(key=lambda row: (row[0]))
     return matches

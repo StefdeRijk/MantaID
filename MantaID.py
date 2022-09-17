@@ -11,10 +11,6 @@ from Preprocessing import preprocess_image
 
 settings_file = open("settings.txt", "r")
 
-
-amount_of_mantas = int(settings_file.readline().split(" ")[-1])
-show_all_mantas = bool(int(settings_file.read().split(" ")[-1]))
-
 settings_file.close()
 
 
@@ -356,7 +352,7 @@ class crop_page:
 
         def process_button_function(master, file, attributes):
             processed_image = preprocess_image(self.cropped_image)
-            matches = go_through_database(file, amount_of_mantas, root_folder_id, attributes, drive, processed_image)
+            matches = go_through_database(file, root_folder_id, attributes, drive, processed_image)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
@@ -403,11 +399,9 @@ class crop_page:
 
 class process_page:
     def __init__(self, master, file, attributes, matches, processed_image):
-        global amount_of_mantas
         self.frame = Frame()
         self.matches = matches
         self.match_index = 0
-        self.number_of_mantas = amount_of_mantas
         show_background()
 
         #settings_button
@@ -449,7 +443,7 @@ class process_page:
             show_matches()
 
         def set_button_state():
-            if self.match_index == (self.number_of_mantas - 1) or self.matches[self.match_index + 1][1] == "":
+            if self.matches[self.match_index + 1][1] == "":
                 self.next_button["state"] = DISABLED
             else :
                 self.next_button["state"] = NORMAL
@@ -482,11 +476,10 @@ class process_page:
         self.remove_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
 
         def remove_button_function():
-            self.matches.pop(self.match_index)
-            if self.match_index == (self.number_of_mantas - 1):
+            if self.match_index == (len(self.matches) - 1):
                 self.match_index -= 1
-            self.number_of_mantas -= 1
-            if self.number_of_mantas == 0:
+            self.matches.pop(self.match_index)
+            if len(self.matches) == 0:
                 cancel_button_function()
             else :
                 set_button_state()
