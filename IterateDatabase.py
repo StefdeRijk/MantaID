@@ -2,6 +2,18 @@ from ImageCompare import image_compare
 from SaveImages import get_folder_id, get_manta_id
 import glob
 import cv2
+import threading
+from tkinter import *
+import tkinter as tk
+import time
+
+def show_background(root, background_image):
+    background_label = tk.Label(root, image=background_image)
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+    #quit_button
+    quit_button = tk.Button(root, text="Quit", command=root.quit, font=("Raleway", 16), bg="#00243f", fg="white", height=4, width=16)
+    quit_button.place(relx=0.25, rely=0.8, relwidth=0.125, relheight=0.125)
 
 def append_file_list(list, file_list, filter1, filter2):
     for file in file_list:
@@ -40,25 +52,44 @@ def get_drive_file(database_file, drive_folder, drive):
         if get_manta_id(file['title']) == get_manta_id(database_file):
             return file
 
-def go_through_database(file, database_folder, attributes, drive, preprocessed_image):
+
+def go_through_database(master, database_folder, attributes, drive, preprocessed_image, background_image):
     sift = cv2.xfeatures2d.SIFT_create()
-    file = cv2.imread(file)
+    file = cv2.imread(preprocessed_image)
     keypoints_file, descriptors_file = sift.detectAndCompute(file, None)
 
     #index 0 = percentage similar, index 1 = file (drive object), index 2 = name of manta
     matches = []
     files = glob.glob('C:\\Users\\seder\\Desktop\\MantaID\\Database\\*.jpg') #TODO make this a setting
     files = get_files(attributes, files)
+    total_files = len(files)
 
-    print(len(files))
+    frame = Frame()
+    show_background(master, background_image)
 
+    text = tk.StringVar()
+    text.set(str(0) + " / " + str(total_files))
+    label = tk.Label(master, textvariable=text, font=("Raleway", 56), bg="#264b77", fg="white")
+    label.place(relx=0.175, rely=0.4, relwidth=0.7, relheight=0.2)
+    frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+    master.update()
+
+    time.sleep(1)
+    
     for i in range(len(files)):
-        current_file = files[i]
-        current_result = image_compare(descriptors_file, current_file)
-        current_manta_name = current_file.split("- ")[-1].split(".")[0]
-        drive_file = get_drive_file(files[i], database_folder, drive)
-        matches.append([current_result, drive_file, current_manta_name])
-        print(i)
+        thread = threading.Thread(target=compare_file, args=(files[i], descriptors_file, database_folder, drive, matches,))
+        thread.start()
+        thread.join()
+        text.set(str(i) + " / " + str(total_files))
+        frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+        master.update()
 
     matches.sort(key=lambda row: (row[0]))
     return matches
+    
+def compare_file(file, descriptors_file, database_folder, drive, matches):
+    current_file = file
+    current_result = image_compare(descriptors_file, current_file)
+    current_manta_name = current_file.split("- ")[-1].split(".")[0]
+    drive_file = get_drive_file(file, database_folder, drive)
+    matches.append([current_result, drive_file, current_manta_name])

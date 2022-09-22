@@ -353,7 +353,7 @@ class crop_page:
 
         def process_button_function(master, file, attributes):
             processed_image = preprocess_image(self.cropped_image)
-            matches = go_through_database(file, root_folder_id, attributes, drive, processed_image)
+            matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
