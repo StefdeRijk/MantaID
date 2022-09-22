@@ -67,7 +67,7 @@ def get_resized_image(reference_image, frame, file, widget_width, widget_height)
     return resized_reference_image, new_width, new_height
 
 def correct_date_format(string):
-    if len(string) > 8:
+    if len(string) != 8:
         return 0
     if string[2] != '-' or string[5] != '-':
         return 0
@@ -93,10 +93,6 @@ class home_page:
     def __init__(self, master):
         self.frame = Frame()
         show_background()
-
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, home_page, manta_name, None, None, None), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #open images
         self.open_button_text = tk.StringVar()
@@ -151,10 +147,6 @@ class selection_page:
         self.attributes = [None] * 5 # species - colour - gender - date - dive site
         show_background()
 
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, selection_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
-
         #cancel button
         self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
@@ -195,9 +187,11 @@ class selection_page:
         def select_attributes(index, box, button):
             if index == 3 and not correct_date_format(box.get()):
                 self.date_button_text.set("Wrong date format: DD-MM-YY")
+                self.date_label.config(bg="#b50202")
                 return
             else:
                 self.date_button_text.set("Enter date of sighting below: DD-MM-YY")
+                self.date_label.config(bg="#264b77")
             if index < 3:
                 self.attributes[index] = box.get(ANCHOR)
             else:
@@ -266,10 +260,6 @@ class orientation_page:
         self.old_x = None
         self.old_y = None
 
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
-
         #cancel button
         self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
@@ -336,10 +326,6 @@ class crop_page:
         self.old_x = None
         self.old_y = None
 
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, large_img_page, file, manta_name, self.attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
-
         #cancel button
         self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
         self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
@@ -404,10 +390,6 @@ class process_page:
         self.matches = matches
         self.match_index = 0
         show_background()
-
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def show_matches():
             ShowMatchImage = show_match_image(master, self.matches, self.match_index)
@@ -501,10 +483,6 @@ class warning_page:
         self.manta_name = manta_name
         show_background()
 
-        #settings_button
-        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file, self.manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
-
         back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
@@ -528,10 +506,6 @@ class new_manta_page:
         self.frame = Frame()
         self.manta_name = manta_name
         show_background()
-
-        #settings_button
-        self.settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, new_manta_page, file, self.manta_name, attributes, matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        self.settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         back_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(master, file, attributes), font=("Raleway", 16), bg="#3c5b74", fg="white")
         back_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
@@ -582,13 +556,18 @@ class new_manta_page:
                 if attributes[1] == "Black":
                     if new_name.find("Black"):
                         self.manta_name_button_text.set("Name must include 'Black'")
+                        self.set_manta_name_label.config(bg="#b50202")
                         return
+                    else:
+                        self.manta_name_button_text.set("Insert new manta name below")
+                        self.set_manta_name_label.config(bg="#3c5b74")
                 if new_name_unique(new_name, drive, root_folder_id):
                     self.manta_name = new_name
                     NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
                     show_page(NewMantaPage.frame)
                 else:
                     self.manta_name_button_text.set("Name must be unique")
+                    self.set_manta_name_label.config(bg="#b50202")
 
         self.set_dive_site_button = tk.Button(master, text="Set dive site", command=lambda:set_dive_site_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
         self.set_dive_site_button.place(relx=0.75, rely=0.2, relwidth=0.125, relheight=0.125)
@@ -620,7 +599,11 @@ class new_manta_page:
         def set_date_button_function(attributes):
             if not correct_date_format(self.set_date_entry_box.get()):
                 self.date_button_text.set("Wrong date format: DD-MM-YY")
-                return 
+                self.set_date_label.config(bg="#b50202")
+                return
+            else:
+                self.date_button_text.set("Change date of sighting below")
+                self.set_date_label.config(bg="#3c5b74")
             new_date = self.set_date_entry_box.get()
             if new_date:
                 attributes[3] = new_date
@@ -656,10 +639,6 @@ class save_page:
      def __init__(self, master, file, manta_name, attributes, matches, match_index):
         self.frame = Frame()
         show_background()
-
-        #settings_button
-        settings_button = tk.Button(master, text="Settings", command=lambda:settings_button_function(master, process_page, file, manta_name, attributes, self.matches), font=("Raleway", 16), bg="#3c5b74", fg="white", height=4, width=16)
-        settings_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #retry button
         self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
