@@ -339,7 +339,7 @@ class crop_page:
 
         def process_button_function(master, file, attributes):
             processed_image = preprocess_image(self.cropped_image)
-            matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image)
+            matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image, home_page)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
 
@@ -400,8 +400,8 @@ class process_page:
         show_matches()
 
         #retry button
-        self.cancel_button = tk.Button(master, text="Use different image", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
-        self.cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.cancel_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def cancel_button_function():
             HomePage = home_page(master)
@@ -439,7 +439,7 @@ class process_page:
 
         #save button
         self.save_button = tk.Button(master, text="Save image", command=lambda:save_button_function(file), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.save_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.05)
+        self.save_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def save_button_function(file):
             SavePage = save_page(master, file, "", attributes, self.matches, self.match_index)
@@ -456,7 +456,7 @@ class process_page:
 
         #remove button
         self.remove_button = tk.Button(master, text="Remove suggestion", command=lambda:remove_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.remove_button.place(relx=0.4375, rely=0.875, relwidth=0.125, relheight=0.05)
+        self.remove_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def remove_button_function():
             if self.match_index == (len(self.matches) - 1):

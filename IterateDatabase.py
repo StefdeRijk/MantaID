@@ -5,7 +5,6 @@ import cv2
 import threading
 from tkinter import *
 import tkinter as tk
-import time
 
 def show_background(root, background_image):
     background_label = tk.Label(root, image=background_image)
@@ -53,7 +52,7 @@ def get_drive_file(database_file, drive_folder, drive):
             return file
 
 
-def go_through_database(master, database_folder, attributes, drive, preprocessed_image, background_image):
+def go_through_database(master, database_folder, attributes, drive, preprocessed_image, background_image, home_page):
     sift = cv2.xfeatures2d.SIFT_create()
     file = cv2.imread(preprocessed_image)
     keypoints_file, descriptors_file = sift.detectAndCompute(file, None)
@@ -72,10 +71,12 @@ def go_through_database(master, database_folder, attributes, drive, preprocessed
     label = tk.Label(master, textvariable=text, font=("Raleway", 56), bg="#264b77", fg="white")
     label.place(relx=0.175, rely=0.4, relwidth=0.7, relheight=0.2)
     frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+    cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(home_page, master), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
+    cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
+
     master.update()
 
-    time.sleep(1)
-    
     for i in range(len(files)):
         thread = threading.Thread(target=compare_file, args=(files[i], descriptors_file, database_folder, drive, matches,))
         thread.start()
@@ -83,13 +84,17 @@ def go_through_database(master, database_folder, attributes, drive, preprocessed
         text.set(str(i) + " / " + str(total_files))
         frame.place(relx=0, rely=0, relwidth=1, relheight=1)
         master.update()
-
+    
     matches.sort(key=lambda row: (row[0]))
     return matches
-    
+
 def compare_file(file, descriptors_file, database_folder, drive, matches):
     current_file = file
     current_result = image_compare(descriptors_file, current_file)
     current_manta_name = current_file.split("- ")[-1].split(".")[0]
     drive_file = get_drive_file(file, database_folder, drive)
     matches.append([current_result, drive_file, current_manta_name])
+
+def cancel_button_function(home_page, master):
+    HomePage = home_page(master)
+    HomePage.frame.place(relx=0, rely=0, relwidth=1, relheight=1)
