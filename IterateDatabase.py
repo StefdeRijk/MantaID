@@ -72,9 +72,6 @@ def go_through_database(master, database_folder, attributes, drive, preprocessed
     label.place(relx=0.175, rely=0.4, relwidth=0.7, relheight=0.2)
     frame.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-    cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(home_page, master), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-    cancel_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
-
     master.update()
 
     for i in range(len(files)):

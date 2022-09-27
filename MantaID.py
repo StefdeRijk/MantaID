@@ -9,21 +9,24 @@ from pydrive.drive import GoogleDrive
 from MathUtils import get_angle
 from Preprocessing import preprocess_image
 
-settings_file = open("settings.txt", "r")
-
-settings_file.close()
-
-
 gauth = GoogleAuth()
 
-gauth.LoadCredentialsFile("mycreds.txt")
-if gauth.credentials is None:
-    gauth.LocalWebserverAuth()
-elif gauth.access_token_expired:
-    gauth.Refresh()
-else:
-    gauth.Authorize()
-gauth.SaveCredentialsFile("mycreds.txt")
+def get_credentials():
+    gauth.LoadCredentialsFile("mycreds.txt")
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        creds = open("mycreds.txt", "w")
+        creds.write("")
+        creds.close()
+        return 1
+    else:
+        gauth.Authorize()
+    gauth.SaveCredentialsFile("mycreds.txt")
+    return 0
+
+if get_credentials():
+    get_credentials()
 
 drive = GoogleDrive(gauth)
 fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
@@ -55,12 +58,12 @@ def show_background():
 def get_resized_image(reference_image, frame, file, widget_width, widget_height):
     aspect_ratio_img = reference_image.width() / reference_image.height()
     frame.update()
-    aspect_ratio_label = (frame.winfo_screenwidth() * widget_width) / (frame.winfo_screenheight() * widget_height - 10)
+    aspect_ratio_label = (frame.winfo_screenwidth() * widget_width) / ((frame.winfo_screenheight() - 70) * widget_height)
     if aspect_ratio_img > aspect_ratio_label:
         new_width = int(frame.winfo_screenwidth() * widget_width)
         new_height = int(new_width / aspect_ratio_img)
     else:
-        new_height = int(frame.winfo_screenheight() * widget_height)
+        new_height = int((frame.winfo_screenheight() - 70) * widget_height)
         new_width = int(new_height * aspect_ratio_img)
     new_reference_image = Image.open(file)
     resized_reference_image = new_reference_image.resize((new_width, new_height), Image.ANTIALIAS)
@@ -112,30 +115,29 @@ class home_page:
                 home_page(master)
 
 class large_img_page:
-    def __init__(self, master, file, previous_page):
+    def __init__(self, master, file, image, previous_page, attributes, rot_image, image_width, image_height, matches, manta_name):
         self.frame = Frame()
         show_background()
-
-        #cancel button
-        self.cancel_button = tk.Button(master, text="Cancel", command=lambda:cancel_button_function(), font=("Raleway", 16), bg="#3c5b74", fg="white", height=3, width=16)
-        self.cancel_button.place(relx=0.4375, rely=0.8, relwidth=0.125, relheight=0.125)
-
-        def cancel_button_function():
-            HomePage = home_page(master)
-            show_page(HomePage.frame)
         
-        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(master, file), font=("Raleway", 16), bg="#264b77", fg="white")
+        back_button = tk.Button(master, text="Back", command=lambda:back_button_function(previous_page), font=("Raleway", 16), bg="#264b77", fg="white")
         back_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def back_button_function(master, file):
-            PreviousPage = previous_page(master, file)
+        def back_button_function(previous_page):
+            if attributes == None and matches == None:
+                PreviousPage = previous_page(master, file)
+            elif rot_image == None and matches == None:
+                PreviousPage = previous_page(master, file, attributes)
+            elif matches == None and matches == None:
+                PreviousPage = previous_page(master, file, attributes, rot_image, image_width, image_height)
+            else:
+                PreviousPage = previous_page(master, file, manta_name, attributes, matches)
             show_page(PreviousPage.frame)
         
         #large image
-        self.large_image = Image.open(file)
-        self.large_image=ImageTk.PhotoImage(self.large_image)
-        self.resized_large_image, new_width, new_height = get_resized_image(self.large_image, self.frame, file, 0.8, 0.7)
-        self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
+        self.large_image = Image.open(image)
+        self.large_image = ImageTk.PhotoImage(self.large_image)
+        self.resized_large_image, new_width, new_height = get_resized_image(self.large_image, self.frame, image, 0.8, 0.7)
+        self.resized_large_image = ImageTk.PhotoImage(self.resized_large_image)
         self.large_label = tk.Label(master, image=self.resized_large_image, bg="#264b77")
         self.large_label.image = self.resized_large_image
         self.large_label.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
@@ -170,7 +172,7 @@ class selection_page:
             show_page(ProcessPage.frame)
 
         def show_full_img_button_function():
-            LargeImgPage = large_img_page(master, file, selection_page)
+            LargeImgPage = large_img_page(master, file, file, selection_page, None, None, None, None, None, None)
             show_page(LargeImgPage.frame)
 
         #reference image
@@ -282,6 +284,18 @@ class orientation_page:
             self.canvas.update()
             CropPage = crop_page(master, file, attributes, self.rot_image, self.image_width, self.image_height)
             show_page(CropPage.frame)
+        
+        def info_button_function():
+            InfoPage = large_img_page(master, file, "rotate_page_info.jpg", orientation_page, attributes, None, None, None, None, None)
+            show_page(InfoPage.frame)
+
+        #info button
+        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.info_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+
+        #label
+        self.label = tk.Label(master, text="Draw line from tail to mouth", font=("Raleway", 32), bg="#264b77", fg="white")
+        self.label.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.075)
 
         #large image
         self.large_image = Image.open(file)
@@ -290,7 +304,7 @@ class orientation_page:
         self.resized_large_image=ImageTk.PhotoImage(self.resized_large_image)
         self.canvas = Canvas(master, bg="#264b77")
         self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.resized_large_image, anchor=N)
-        self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
+        self.canvas.place(relx=0.1, rely=0.15, relwidth=0.8, relheight=0.6)
         self.canvas.bind('<Button-1>', self.draw_direction)
         self.canvas.bind('<Motion>', self.draw_motion)
         
@@ -320,6 +334,7 @@ class crop_page:
         self.rot_image = rot_image
         self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
         self.old_rectangle = None
+        self.cropped_image = None
         show_background()
 
         self.pressed = 0
@@ -338,15 +353,31 @@ class crop_page:
         process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function(master, file, attributes):
+            if self.cropped_image == None:
+                self.label.config(bg="#b50202")
+                return
+            self.label.config(bg="#264b77")
             processed_image = preprocess_image(self.cropped_image)
             matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image, home_page)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
+        
+        def info_button_function():
+            InfoPage = large_img_page(master, file, "crop_page_info.jpg", crop_page, attributes, rot_image, image_width, image_height, None, None)
+            show_page(InfoPage.frame)
+        
+        #info button
+        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.info_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
+        
+        #label
+        self.label = tk.Label(master, text="Draw box around area of interest", font=("Raleway", 32), bg="#264b77", fg="white")
+        self.label.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.075)
 
         #large image
         self.canvas = Canvas(master, bg="#264b77")
         self.canvas.create_image(self.frame.winfo_screenwidth() * 0.4, 0, image=self.temp_rot_image, anchor=N)
-        self.canvas.place(relx=0.1, rely=0.05, relwidth=0.8, relheight=0.7)
+        self.canvas.place(relx=0.1, rely=0.15, relwidth=0.8, relheight=0.6)
         self.canvas.bind('<Button-1>', self.draw_direction)
         self.canvas.bind('<Motion>', self.draw_motion)
         
@@ -450,7 +481,7 @@ class process_page:
         new_button.place(relx=0.8, rely=0.825, relwidth=0.075, relheight=0.075)
 
         def new_button_function(master, file, attributes):
-            WarningPage = warning_page(master, file, attributes, self.matches, processed_image)
+            WarningPage = warning_page(master, file, "", attributes, self.matches, processed_image)
             self.frame.place_forget()
             show_page(WarningPage.frame)
 
@@ -535,7 +566,7 @@ class new_manta_page:
         self.show_full_img_button.place(relx=0.075, rely=0.65, relwidth=0.25, relheight=0.1)
 
         def show_full_img_button_function():
-            LargeImgPage = large_img_page(master, file, manta_name, attributes, matches, new_manta_page)
+            LargeImgPage = large_img_page(master, file, file, new_manta_page, attributes, None, None, None, matches, manta_name)
             show_page(LargeImgPage.frame)
 
         self.manta_name_button_text = tk.StringVar()
