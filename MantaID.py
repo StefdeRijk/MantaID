@@ -290,7 +290,7 @@ class orientation_page:
             show_page(InfoPage.frame)
 
         #info button
-        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#996d1a", fg="white", height=3, width=16)
         self.info_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
 
         #label
@@ -334,7 +334,10 @@ class crop_page:
         self.rot_image = rot_image
         self.temp_rot_image = ImageTk.PhotoImage(self.rot_image)
         self.old_rectangle = None
-        self.cropped_image = None
+        self.left_x = None
+        self.right_x = None
+        self.top_y = None
+        self.bottom_y = None
         show_background()
 
         self.pressed = 0
@@ -353,21 +356,30 @@ class crop_page:
         process_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def process_button_function(master, file, attributes):
-            if self.cropped_image == None:
+            if self.left_x == None:
                 self.label.config(bg="#b50202")
                 return
+
             self.label.config(bg="#264b77")
-            processed_image = preprocess_image(self.cropped_image)
+            if self.image_width < self.frame.winfo_screenwidth() * 0.8:
+                difference = (self.frame.winfo_screenwidth() * 0.8 - self.image_width) / 2
+                cropped_image = self.rot_image.crop((self.left_x - difference, self.top_y, self.right_x - difference, self.bottom_y))
+            else:
+                difference = (self.frame.winfo_screenheight() * 0.6 - self.image_height) / 2
+                cropped_image = self.rot_image.crop((self.left_x, self.top_y - difference, self.right_x, self.bottom_y - difference))
+
+            processed_image = preprocess_image(cropped_image)
             matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image, home_page)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
+        
         
         def info_button_function():
             InfoPage = large_img_page(master, file, "crop_page_info.jpg", crop_page, attributes, rot_image, image_width, image_height, None, None)
             show_page(InfoPage.frame)
         
         #info button
-        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#264b77", fg="white", height=3, width=16)
+        self.info_button = tk.Button(master, text="Info", command=lambda:info_button_function(), font=("Raleway", 16), bg="#996d1a", fg="white", height=3, width=16)
         self.info_button.place(relx=0.125, rely=0.825, relwidth=0.075, relheight=0.075)
         
         #label
@@ -389,25 +401,18 @@ class crop_page:
         if self.pressed == 2:
             self.canvas.delete(self.old_rectangle)
             if self.old_x > event.x:
-                left_x = event.x
-                right_x = self.old_x
+                self.left_x = event.x
+                self.right_x = self.old_x
             else:
-                left_x = self.old_x
-                right_x = event.x
-            if self.old_y < event.y:
-                top_y = event.y
-                bottom_y = self.old_y
+                self.left_x = self.old_x
+                self.right_x = event.x
+            if self.old_y > event.y:
+                self.top_y = event.y
+                self.bottom_y = self.old_y
             else:
-                top_y = self.old_y
-                bottom_y = event.y
-            self.old_rectangle = self.canvas.create_rectangle(left_x, top_y, right_x, bottom_y, width=2, outline='#ff2020')
-            if self.image_width < self.frame.winfo_screenwidth() * 0.8:
-                difference = (self.frame.winfo_screenwidth() * 0.8 - self.image_width) / 2
-                self.cropped_image = self.rot_image.crop([self.old_x - difference, self.old_y, event.x - difference, event.y])
-            else:
-                difference = (self.frame.winfo_screenheight() * 0.7 - self.image_height) / 2
-                self.cropped_image = self.rot_image.crop([self.old_x, self.old_y - difference, event.x, event.y - difference])
-            self.temp_cropped_image = ImageTk.PhotoImage(self.cropped_image)
+                self.top_y = self.old_y
+                self.bottom_y = event.y
+            self.old_rectangle = self.canvas.create_rectangle(self.left_x, self.top_y, self.right_x, self.bottom_y, width=2, outline='#ff2020')
             self.pressed = 0
     
     def draw_motion(self, event):
