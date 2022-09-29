@@ -134,7 +134,7 @@ def save_image_in_match_folder(file, drive, match_file_name, database_folder, at
 	
 	species_letter, sex_letter = get_species_and_sex_letter(attributes)
 
-	file_name = "MR-" + manta_id + species_letter + sex_letter + "." + format_date(attributes[3]) + "." + attributes[4] + "-" + manta_name
+	file_name = "MR-" + manta_id + species_letter + sex_letter + "." + format_date(attributes[3]) + "." + attributes[4] + " - " + manta_name
 	new_file = drive.CreateFile({"title": file_name + ".jpg", "mimeType": "image/jpeg", "parents": [{"kind": "drive#fileLink", "id": dst_folder_id}]})
 	new_file.SetContentFile(file)
 	new_file.Upload()

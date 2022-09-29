@@ -373,7 +373,7 @@ class crop_page:
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
         
-        
+
         def info_button_function():
             InfoPage = large_img_page(master, file, "crop_page_info.jpg", crop_page, attributes, rot_image, image_width, image_height, None, None)
             show_page(InfoPage.frame)
@@ -555,6 +555,10 @@ class new_manta_page:
 
         def add_manta_button_function():
             save_new_manta(manta_name, attributes, root_folder_id, file, drive)
+            fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+            for file in fileList:
+                if "Database" in file["title"]:
+                    root_folder_id = file["id"]
             HomePage = home_page(master)
             self.frame.place_forget()
             show_page(HomePage.frame)
@@ -699,6 +703,10 @@ class save_page:
         def save_button_function(file, drive):
             global root_folder_id
             save_image_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, matches[match_index][2])
+            fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+            for file in fileList:
+                if "Database" in file["title"]:
+                    root_folder_id = file["id"]
             cancel_button_function()
         
         #save button
@@ -722,6 +730,10 @@ class save_page:
             if files:
                 file_list = list(files)
                 save_multiple_images_in_match_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, file_list, matches[match_index][2])
+                fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+                for file in fileList:
+                    if "Database" in file["title"]:
+                        root_folder_id = file["id"]
                 cancel_button_function()
         self.safe_multiple_files_button_text.set("Save multiple files")
 
