@@ -139,7 +139,11 @@ def save_image_in_match_folder(file, drive, match_file_name, database_folder, at
 	new_file.SetContentFile(file)
 	new_file.Upload()
 
-def save_image_in_master_folder(file, drive, match_file_name, database_folder, attributes):
+def save_image_in_local_database(manta_name, processed_image):
+	print(manta_name)
+	processed_image.save(".\\Database\\" + manta_name + ".jpg")
+
+def save_image_in_master_folder(file, drive, match_file_name, database_folder, attributes, processed_image):
 	folder_id = get_folder_id(database_folder, "MASTER", drive)
 	manta_id = get_manta_id(match_file_name)
 
@@ -148,8 +152,6 @@ def save_image_in_master_folder(file, drive, match_file_name, database_folder, a
 		ref_manta_id = get_manta_id(files['title'])
 		if manta_id == ref_manta_id:
 			files.Delete()
-			# print("deleted")
-			# print(files['title'])
 
 	if manta_id < 10:
 		manta_id = "000" + str(manta_id)
@@ -162,8 +164,9 @@ def save_image_in_master_folder(file, drive, match_file_name, database_folder, a
 	manta_name = match_file_name.split("- ")[-1].split(".")[0]
 	manta_name = "MR-" + str(manta_id) + species_letter + sex_letter + " - " + manta_name
 	save_image_new_dir(file, folder_id, manta_name, drive)
+	save_image_in_local_database(manta_name, processed_image)
 
-def save_new_manta(manta_name, attributes, database_folder, file, drive):
+def save_new_manta(manta_name, attributes, database_folder, file, drive, processed_image):
 	folder_id, folder_name = create_new_dir(manta_name, attributes, database_folder, drive)
 
 	#safed in new folder
@@ -191,3 +194,4 @@ def save_new_manta(manta_name, attributes, database_folder, file, drive):
 	#safe in master folder
 	folder_id = get_folder_id(database_folder, "MASTER", drive)
 	save_image_new_dir(file, folder_id, folder_name, drive)
+	save_image_in_local_database(folder_name, processed_image)

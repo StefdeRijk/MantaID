@@ -35,8 +35,6 @@ for file in fileList:
         root_folder_id = file["id"]
 
 
-# print(root_folder_id)
-
 root = tk.Tk()
 root.title("MantaID")
 root.iconbitmap("icon.ico")
@@ -369,7 +367,7 @@ class crop_page:
                 cropped_image = self.rot_image.crop((self.left_x, self.top_y - difference, self.right_x, self.bottom_y - difference))
 
             processed_image = preprocess_image(cropped_image)
-            matches = go_through_database(master, root_folder_id, attributes, drive, processed_image, background_image, home_page)
+            matches = go_through_database(master, root_folder_id, attributes, drive, "preprocessed_img.jpg", background_image, home_page)
             PreviousPage = process_page(master, file, attributes, matches, processed_image)
             show_page(PreviousPage.frame)
         
@@ -478,7 +476,7 @@ class process_page:
         self.save_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def save_button_function(file):
-            SavePage = save_page(master, file, "", attributes, self.matches, self.match_index)
+            SavePage = save_page(master, file, "", attributes, self.matches, self.match_index, processed_image)
             show_page(SavePage.frame)
 
         #new_button
@@ -533,12 +531,12 @@ class warning_page:
         continue_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def continue_button_function():
-            NewMantaPage = new_manta_page(master, file, "", attributes, matches)
+            NewMantaPage = new_manta_page(master, file, "", attributes, matches, processed_image)
             self.frame.place_forget()
             show_page(NewMantaPage.frame)
 
 class new_manta_page:
-    def __init__(self, master, file, manta_name, attributes, matches):
+    def __init__(self, master, file, manta_name, attributes, matches, processed_image):
         self.frame = Frame()
         self.manta_name = manta_name
         show_background()
@@ -553,9 +551,9 @@ class new_manta_page:
         self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(master, attributes, file, drive), font=("Raleway", 16), bg="#264b77", fg="white")
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def add_manta_button_function(master, attributes, file, drive):
+        def add_manta_button_function(master, attributes, file, drive, processed_image):
             global root_folder_id
-            save_new_manta(self.manta_name, attributes, root_folder_id, file, drive)
+            save_new_manta(self.manta_name, attributes, root_folder_id, file, drive, processed_image)
             fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
             for file in fileList:
                 if "Database" in file["title"]:
@@ -677,7 +675,7 @@ class new_manta_page:
         self.manta_colour_label.place(relx=0.625, rely=0.65, relwidth=0.25, relheight=0.1)
 
 class save_page:
-     def __init__(self, master, file, manta_name, attributes, matches, match_index):
+     def __init__(self, master, file, manta_name, attributes, matches, match_index, processed_image):
         self.frame = Frame()
         show_background()
 
@@ -717,8 +715,8 @@ class save_page:
         def save_as_master_button_function(file, drive):
             global root_folder_id
             self.save_as_master_button["state"] = "disabled"
-            save_image_in_master_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes)
-            save_page(master, file, manta_name, attributes, matches, match_index)
+            save_image_in_master_folder(file, drive, matches[match_index][1]['title'], root_folder_id, attributes, processed_image)
+            save_page(master, file, manta_name, attributes, matches, match_index, processed_image)
         
         self.safe_multiple_files_button_text = tk.StringVar()
         self.safe_multiple_files_button_text.set("Save multiple files")

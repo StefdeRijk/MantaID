@@ -9,4 +9,4 @@ def preprocess_image(original_img):
 	high_contrast_arr = clahe.apply(no_noise_img)
 	high_contrast_img = Image.fromarray(high_contrast_arr)
 	high_contrast_img.save("preprocessed_img.jpg")
-	return "preprocessed_img.jpg"
+	return high_contrast_img
