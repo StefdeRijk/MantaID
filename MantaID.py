@@ -35,7 +35,7 @@ for file in fileList:
         root_folder_id = file["id"]
 
 
-print(root_folder_id)
+# print(root_folder_id)
 
 root = tk.Tk()
 root.title("MantaID")
@@ -527,7 +527,7 @@ class warning_page:
             show_page(PreviousPage.frame)
 
         self.warning_label = tk.Label(master, text="Warning!\n\nPlease ask a project scientist \nto check if the manta \nis a new individual.", font=("Raleway", 46), bg="#bc5334", fg="white")
-        self.warning_label.place(relx=0.1, rely=0.05, relwidth=0.75, relheight=0.7)
+        self.warning_label.place(relx=0.125, rely=0.05, relwidth=0.75, relheight=0.7)
         
         continue_button = tk.Button(master, text="Continue", command=lambda:continue_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
         continue_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
@@ -550,11 +550,12 @@ class new_manta_page:
             PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
             show_page(PreviousPage.frame)
         
-        self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(master, attributes, file, drive), font=("Raleway", 16), bg="#264b77", fg="white")
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def add_manta_button_function():
-            save_new_manta(manta_name, attributes, root_folder_id, file, drive)
+        def add_manta_button_function(master, attributes, file, drive):
+            global root_folder_id
+            save_new_manta(self.manta_name, attributes, root_folder_id, file, drive)
             fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
             for file in fileList:
                 if "Database" in file["title"]:

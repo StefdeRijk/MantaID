@@ -148,8 +148,8 @@ def save_image_in_master_folder(file, drive, match_file_name, database_folder, a
 		ref_manta_id = get_manta_id(files['title'])
 		if manta_id == ref_manta_id:
 			files.Delete()
-			print("deleted")
-			print(files['title'])
+			# print("deleted")
+			# print(files['title'])
 
 	if manta_id < 10:
 		manta_id = "000" + str(manta_id)
