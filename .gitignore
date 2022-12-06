@@ -1,0 +1,9 @@
+*.jpg
+*.jpeg
+*.txt
+*.json
+*.ini
+/Fish test
+/Substrate test
+Database
+__pycache__

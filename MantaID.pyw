@@ -8,6 +8,7 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from MathUtils import get_angle
 from Preprocessing import preprocess_image
+import os
 
 gauth = GoogleAuth()
 
@@ -29,10 +30,11 @@ if get_credentials():
     get_credentials()
 
 drive = GoogleDrive(gauth)
-fileList = drive.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
-for file in fileList:
-    if "Database" in file["title"]:
-        root_folder_id = file["id"]
+root_folder_id = get_folder_id('root', "Science Projects", drive)
+root_folder_id = get_folder_id(root_folder_id, "Manta Programme", drive)
+root_folder_id = get_folder_id(root_folder_id, "Manta Ray Focus", drive)
+root_folder_id = get_folder_id(root_folder_id, "Photo", drive)
+root_folder_id = get_folder_id(root_folder_id, "ID Database", drive)
 
 
 root = tk.Tk()
@@ -94,14 +96,19 @@ class home_page:
     def __init__(self, master):
         self.frame = Frame()
         show_background()
+        root_folder_id = get_folder_id('root', "Science Projects", drive)
+        root_folder_id = get_folder_id(root_folder_id, "Manta Programme", drive)
+        root_folder_id = get_folder_id(root_folder_id, "Manta Ray Focus", drive)
+        root_folder_id = get_folder_id(root_folder_id, "Photo", drive)
+        root_folder_id = get_folder_id(root_folder_id, "ID Database", drive)
 
         #open images
         self.open_button_text = tk.StringVar()
-        self.open_button = tk.Button(master, textvariable=self.open_button_text, command=lambda:open_files(file), font=("Raleway", 16), bg="#264b77", fg="white", height=4, width=16)
+        self.open_button = tk.Button(master, textvariable=self.open_button_text, command=lambda:open_files(), font=("Raleway", 16), bg="#264b77", fg="white", height=4, width=16)
         self.open_button_text.set("Open image")
         self.open_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
-        def open_files(file):
+        def open_files():
             self.open_button_text.set("Loading...")
             files = filedialog.askopenfile(parent=master, mode="rb", title="Choose file", filetypes=[("Images", "*.jpg; *.jpeg; *.JPG")])
             if files:
@@ -427,6 +434,8 @@ class process_page:
 
         def show_matches():
             ShowMatchImage = show_match_image(master, self.matches, self.match_index)
+            if ShowMatchImage.timed_out == True and self.match_index >= 0:
+                self.match_index -= 1
             ShowMatchLabel = show_match_label(master, self.matches, self.match_index)
             ShowMatchImage.frame.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
             ShowMatchLabel.frame.place(relx=0.4375, rely=0.725, relwidth=0.125, relheight=0.05)
@@ -460,7 +469,7 @@ class process_page:
             show_matches()
 
         def set_button_state():
-            if self.matches[self.match_index + 1][1] == "":
+            if self.match_index + 1 > len(self.matches):
                 self.next_button["state"] = DISABLED
             else :
                 self.next_button["state"] = NORMAL
@@ -548,7 +557,7 @@ class new_manta_page:
             PreviousPage = process_page(master, file, self.manta_name, attributes, matches)
             show_page(PreviousPage.frame)
         
-        self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(master, attributes, file, drive), font=("Raleway", 16), bg="#264b77", fg="white")
+        self.add_manta_button = tk.Button(master, text="Add manta", command=lambda:add_manta_button_function(master, attributes, file, drive, processed_image), font=("Raleway", 16), bg="#264b77", fg="white")
         self.add_manta_button.place(relx=0.625, rely=0.8, relwidth=0.125, relheight=0.125)
 
         def add_manta_button_function(master, attributes, file, drive, processed_image):
@@ -602,7 +611,7 @@ class new_manta_page:
                         self.set_manta_name_label.config(bg="#3c5b74")
                 if new_name_unique(new_name, drive, root_folder_id):
                     self.manta_name = new_name
-                    NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
+                    NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches, processed_image)
                     show_page(NewMantaPage.frame)
                 else:
                     self.manta_name_button_text.set("Name must be unique")
@@ -621,7 +630,7 @@ class new_manta_page:
             new_dive_site = self.set_dive_site_entry_box.get()
             if new_dive_site:
                 attributes[4] = new_dive_site
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches, processed_image)
                 show_page(NewMantaPage.frame)
 
         self.date_button_text = tk.StringVar()
@@ -646,7 +655,7 @@ class new_manta_page:
             new_date = self.set_date_entry_box.get()
             if new_date:
                 attributes[3] = new_date
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches, processed_image)
                 show_page(NewMantaPage.frame)
 
         self.set_manta_gender_button = tk.Button(master, text="Set manta gender", command=lambda:set_manta_gender_button_function(attributes), font=("Raleway", 16), bg="#264b77", fg="white")
@@ -665,7 +674,7 @@ class new_manta_page:
             new_gender = self.set_manta_gender_listbox.get(ANCHOR)
             if new_gender:
                 attributes[2] = new_gender
-                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches)
+                NewMantaPage = new_manta_page(master, file, self.manta_name, attributes, matches, processed_image)
                 show_page(NewMantaPage.frame)
         
         self.manta_species_label = tk.Label(master, text="Species: " + attributes[0], font=("Raleway", 16), bg="#3c5b74", fg="white")
@@ -748,15 +757,26 @@ class save_page:
 class show_match_image:
     def __init__(self, master, matches, i):
         self.frame = Frame()
+        self.timed_out = True
+        self.compare_image = None
         #compare image
-        self.compare_image = matches[i][1].GetContentFile("temp_match.jpeg")
-        self.compare_image = Image.open("temp_match.jpeg")
+        print(i)
+        while self.compare_image is None:
+            if os.path.exists("temp_match.jpeg"):
+                os.remove("temp_match.jpeg")
+            matches[i][1].GetContentFile("temp_match.jpeg")
+            if matches[i][1] is None:
+                print(i)
+            self.compare_image = Image.open("temp_match.jpeg")
+            print(self.compare_image)
+            print(type(self.compare_image))
         self.compare_image = ImageTk.PhotoImage(self.compare_image)
         self.resized_compare_image, new_width, new_height = get_resized_image(self.compare_image, self.frame, "temp_match.jpeg", 0.425, 0.675)
         self.resized_compare_image = ImageTk.PhotoImage(self.resized_compare_image)
         self.compare_label = tk.Label(master, image=self.resized_compare_image, bg="#006699")
         self.compare_label.image = self.resized_compare_image
         self.compare_label.place(relx=0.525, rely=0.025, relwidth=0.425, relheight=0.675)
+        self.timed_out = False
 
 class show_match_label:
     def __init__(self, master, matches, i):

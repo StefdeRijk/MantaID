@@ -5,7 +5,11 @@ def	get_folder_id(root_dir, target_dir_title, drive):
 			return file["id"]
 
 def get_folders_for_all_mantas(drive):
-	database_dir = get_folder_id("root", "Database", drive)
+	database_dir = get_folder_id('root', "Science Projects", drive)
+	database_dir = get_folder_id(database_dir, "Manta Programme", drive)
+	database_dir = get_folder_id(database_dir, "Manta Ray Focus", drive)
+	database_dir = get_folder_id(database_dir, "Photo", drive)
+	database_dir = get_folder_id(database_dir, "ID Database", drive)
 	birostris_dir = get_folder_id(database_dir, "birostris", drive)
 	birostris_dir = get_folder_id(birostris_dir, "each", drive)
 	birostris_dir = drive.ListFile({'q': "'" + birostris_dir + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"}).GetList()

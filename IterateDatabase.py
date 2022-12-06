@@ -5,6 +5,7 @@ import cv2
 import threading
 from tkinter import *
 import tkinter as tk
+import socket
 
 def show_background(root, background_image):
     background_label = tk.Label(root, image=background_image)
@@ -59,7 +60,7 @@ def go_through_database(master, database_folder, attributes, drive, preprocessed
 
     #index 0 = percentage similar, index 1 = file (drive object), index 2 = name of manta
     matches = []
-    files = glob.glob('C:\\Users\\seder\\Desktop\\MantaID\\Database\\*.jpg') #TODO make this a setting
+    files = glob.glob('C:\\Users\\USER\\Desktop\\MantaID\\Database\\*.jpg') #TODO make this a setting
     files = get_files(attributes, files)
     total_files = len(files)
 
@@ -75,6 +76,8 @@ def go_through_database(master, database_folder, attributes, drive, preprocessed
     master.update()
 
     for i in range(len(files)):
+        while internet() is False:
+            pass
         thread = threading.Thread(target=compare_file, args=(files[i], descriptors_file, database_folder, drive, matches,))
         thread.start()
         thread.join()
@@ -91,7 +94,22 @@ def compare_file(file, descriptors_file, database_folder, drive, matches):
     current_manta_name = current_file.split("- ")[-1].split(".")[0]
     drive_file = get_drive_file(file, database_folder, drive)
     matches.append([current_result, drive_file, current_manta_name])
+    return
 
 def cancel_button_function(home_page, master):
     HomePage = home_page(master)
     HomePage.frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+def internet(host="8.8.8.8", port=53, timeout=3):
+    """
+    Host: 8.8.8.8 (google-public-dns-a.google.com)
+    OpenPort: 53/tcp
+    Service: domain (DNS/TCP)
+    """
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        print(ex)
+        return False
